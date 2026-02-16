@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>SME Cybersecurity Risk Dashboard</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+
+<div class="container">
+
+    <div class="header">
+        <h1>SME Cybersecurity Risk Assessment System</h1>
+        <p class="subtitle">Quantitative Risk Evaluation & Decision Support Engine</p>
+    </div>
+
+    <!-- ============================= -->
+    <!-- ORGANIZATION PROFILE SECTION -->
+    <!-- ============================= -->
+
+    <div class="company-section">
+
+        <h2 style="margin-bottom:15px;">Organization Profile</h2>
+
+        <div class="company-grid">
+            <input type="text" id="companyName" placeholder="Organization Name">
+            <input type="text" id="industryType" placeholder="Industry Type">
+            <input type="number" id="employeeCount" placeholder="Number of Employees">
+            <input type="number" id="endpointCount" placeholder="Number of Endpoints">
+            <input type="date" id="assessmentDate">
+        </div>
+
+    </div>
+
+    <!-- ============================= -->
+    <!-- RISK QUESTION CARDS -->
+    <!-- ============================= -->
+
+    <div class="card-grid">
+
+        <!-- Network Security -->
+        <div class="card">
+            <h2>🌐 Network Security</h2>
+            <select class="risk-input">
+                <option value="1">Firewall Properly Configured</option>
+                <option value="3">Basic Firewall</option>
+                <option value="5">No Firewall</option>
+            </select>
+            <select class="risk-input">
+                <option value="1">24/7 Monitoring</option>
+                <option value="3">Basic Log Monitoring</option>
+                <option value="5">No Monitoring</option>
+            </select>
+            <select class="risk-input">
+                <option value="1">Secure Internal Network</option>
+                <option value="3">Occasional Public WiFi</option>
+                <option value="5">Regular Public WiFi Usage</option>
+            </select>
+        </div>
+
+        <!-- Access Control -->
+        <div class="card">
+            <h2>🔐 Access Control</h2>
+            <select class="risk-input">
+                <option value="1">MFA Enabled</option>
+                <option value="3">Password Only</option>
+                <option value="5">No Strong Authentication</option>
+            </select>
+            <select class="risk-input">
+                <option value="1">Strong Password Policy</option>
+                <option value="3">Basic Password Policy</option>
+                <option value="5">No Policy</option>
+            </select>
+            <select class="risk-input">
+                <option value="1">Role-Based Access</option>
+                <option value="3">Limited Role Management</option>
+                <option value="5">No Access Segmentation</option>
+            </select>
+        </div>
+
+        <!-- Data Protection -->
+        <div class="card">
+            <h2>🛡 Data Protection</h2>
+            <select class="risk-input">
+                <option value="1">Data Encrypted</option>
+                <option value="3">Partial Encryption</option>
+                <option value="5">No Encryption</option>
+            </select>
+            <select class="risk-input">
+                <option value="1">Secure Data Sharing</option>
+                <option value="3">Basic Controls</option>
+                <option value="5">No Controls</option>
+            </select>
+            <select class="risk-input">
+                <option value="1">Secure Storage</option>
+                <option value="3">Moderate Storage Security</option>
+                <option value="5">No Data Protection Measures</option>
+            </select>
+        </div>
+
+        <!-- Backup & Recovery -->
+        <div class="card">
+            <h2>💾 Backup & Recovery</h2>
+            <select class="risk-input">
+                <option value="1">Daily Automated Backup</option>
+                <option value="3">Weekly Backup</option>
+                <option value="5">No Backup</option>
+            </select>
+            <select class="risk-input">
+                <option value="1">Offsite Backup</option>
+                <option value="3">Onsite Only</option>
+                <option value="5">No Redundancy</option>
+            </select>
+            <select class="risk-input">
+                <option value="1">Disaster Recovery Plan Exists</option>
+                <option value="3">Partial DR Plan</option>
+                <option value="5">No DR Plan</option>
+            </select>
+        </div>
+
+        <!-- Employee Awareness -->
+        <div class="card">
+            <h2>👥 Employee Awareness</h2>
+            <select class="risk-input">
+                <option value="1">Regular Phishing Training</option>
+                <option value="3">Occasional Training</option>
+                <option value="5">No Training</option>
+            </select>
+            <select class="risk-input">
+                <option value="1">Security Awareness Program</option>
+                <option value="3">Basic Awareness</option>
+                <option value="5">No Awareness Program</option>
+            </select>
+            <select class="risk-input">
+                <option value="1">Incident Reporting Policy</option>
+                <option value="3">Informal Reporting</option>
+                <option value="5">No Reporting Mechanism</option>
+            </select>
+        </div>
+
+    </div>
+
+    <!-- ============================= -->
+    <!-- EVALUATE BUTTON -->
+    <!-- ============================= -->
+
+    <div class="evaluate-section">
+        <button id="evaluateBtn">Evaluate Risk</button>
+    </div>
+
+    <!-- ============================= -->
+    <!-- RESULTS SECTION -->
+    <!-- ============================= -->
+
+    <div class="results-section" style="display:none;">
+
+        <div id="companySummary" style="margin-bottom:20px;"></div>
+
+        <h2 id="riskScore">Risk Score: --</h2>
+
+        <h3>
+            Classification:
+            <span id="riskBadge" class="risk-badge">--</span>
+        </h3>
+
+        <p id="riskSummary" class="executive-summary"></p>
+
+        <canvas id="riskGauge" style="max-width:300px; margin: 20px auto;"></canvas>
+        <canvas id="riskChart"></canvas>
+
+        <div id="domainBreakdown" class="domain-breakdown"></div>
+        <div id="riskPriorityRanking"></div>
+        <div id="complianceMapping"></div>
+        <div id="recommendations" class="recommendation-box"></div>
+
+        <!-- ============================= -->
+        <!-- PDF FORM -->
+        <!-- ============================= -->
+
+        <form id="reportForm" action="/generate_report" method="POST">
+
+            <input type="hidden" name="companyName" id="formCompanyName">
+    <input type="hidden" name="industry" id="formIndustry">
+<input type="hidden" name="employees" id="formEmployees">
+<input type="hidden" name="endpoints" id="formEndpoints">
+
+    <input type="hidden" name="assessmentDate" id="formAssessmentDate">
+
+    <input type="hidden" name="riskScore" id="formRiskScore">
+    <input type="hidden" name="riskLevel" id="formRiskLevel">
+    <input type="hidden" name="maturity" id="formMaturity">
+    <input type="hidden" name="summary" id="formSummary">
+    <input type="hidden" name="domains" id="formDomains">
+    <input type="hidden" name="recommendations" id="formRecommendations">
+
+    <button type="submit" style="margin-top:20px;">
+        Download Risk Assessment Report
+    </button>
+
+        </form>
+
+    </div>
+
+</div>
+
+<script src="{{ url_for('static', filename='js/main.js') }}"></script>
+
+</body>
+</html>
