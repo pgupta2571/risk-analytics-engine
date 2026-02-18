@@ -18,6 +18,10 @@ app = Flask(__name__)
 def home():
     return render_template("index.html")
 
+@app.route("/test")
+def test():
+    return "Server is running properly"
+
 
 @app.route("/generate_report", methods=["POST"])
 def generate_report():
@@ -227,5 +231,5 @@ def generate_report():
 
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=5000)
+    app.run()
 
