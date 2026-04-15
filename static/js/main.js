@@ -1,687 +1,462 @@
-document.addEventListener("DOMContentLoaded", function () {
-
-console.log("JS LOADED");
+// ============================================================
+//  SME Cybersecurity Risk Assessment — main.js
+// ============================================================
 
 let chartInstance = null;
-let gaugeInstance = null;
+let gaugeInstance  = null;
 
-document.getElementById("evaluateBtn").addEventListener("click", function () {
+// ----------------------------------------------------------------
+// PARTICLE BACKGROUND
+// ----------------------------------------------------------------
+(function initParticles() {
+    const canvas = document.getElementById("bgCanvas");
+    if (!canvas) return;
+    const ctx = canvas.getContext("2d");
 
-    let inputs = document.querySelectorAll(".risk-input");
+    let W, H, particles = [], connections = [];
 
-    let domainScores = {
-        network: 0,
-        access: 0,
-        data: 0,
-        backup: 0,
-        employee: 0
-    };
+    function resize() {
+        W = canvas.width  = window.innerWidth;
+        H = canvas.height = window.innerHeight;
+    }
 
-    // ----------------------------
-    // COLLECT DOMAIN SCORES
-    // ----------------------------
-
-    inputs.forEach(function (input, index) {
-        let value = parseInt(input.value);
-
-        if (index < 3) {
-            domainScores.network += value;
-        } else if (index < 6) {
-            domainScores.access += value;
-        } else if (index < 9) {
-            domainScores.data += value;
-        } else if (index < 12) {
-            domainScores.backup += value;
-        } else {
-            domainScores.employee += value;
+    class Particle {
+        constructor() { this.reset(true); }
+        reset(rand) {
+            this.x  = rand ? Math.random() * W : Math.random() * W;
+            this.y  = rand ? Math.random() * H : -10;
+            this.vx = (Math.random() - 0.5) * 0.3;
+            this.vy = Math.random() * 0.25 + 0.05;
+            this.r  = Math.random() * 1.4 + 0.3;
+            this.a  = Math.random() * 0.5 + 0.1;
         }
-    });
-
-    // ----------------------------
-    // WEIGHTED RISK MODEL
-    // ----------------------------
-
-    let domainMax = 15;
-
-    let networkPercent = (domainScores.network / domainMax) * 100;
-    let accessPercent = (domainScores.access / domainMax) * 100;
-    let dataPercent = (domainScores.data / domainMax) * 100;
-    let backupPercent = (domainScores.backup / domainMax) * 100;
-    let employeePercent = (domainScores.employee / domainMax) * 100;
-
-    let weightedScore =
-        (networkPercent * 0.30) +
-        (accessPercent * 0.20) +
-        (dataPercent * 0.25) +
-        (backupPercent * 0.15) +
-        (employeePercent * 0.10);
-
-    let riskPercentage = weightedScore.toFixed(2);
-    let numericScore = parseFloat(riskPercentage);
-
-    // ----------------------------
-    // RISK CLASSIFICATION
-    // ----------------------------
-
-    let riskLevel = "";
-
-    if (numericScore <= 30) {
-        riskLevel = "Low Risk";
-    } else if (numericScore <= 60) {
-        riskLevel = "Moderate Risk";
-    } else if (numericScore <= 80) {
-        riskLevel = "High Risk";
-    } else {
-        riskLevel = "Critical Risk";
-    }
-
-    // ----------------------------
-    // SHOW RESULTS SECTION
-    // ----------------------------
-
-    document.querySelector(".results-section").style.display = "block";
-    
-    // Company Summary Display
-let companyName = document.getElementById("companyName").value || "Not Provided";
-let industry = document.getElementById("industryType").value || "Not Provided";
-let employees = document.getElementById("employeeCount").value || "N/A";
-let endpoints = document.getElementById("endpointCount").value || "N/A";
-
-document.getElementById("companySummary").innerHTML = `
-    <div style="
-        padding:15px;
-        border-radius:12px;
-        background:rgba(255,255,255,0.05);
-        margin-bottom:15px;
-    ">
-        <strong>Organization:</strong> ${companyName}<br>
-        <strong>Industry:</strong> ${industry}<br>
-        <strong>Employees:</strong> ${employees}<br>
-        <strong>Endpoints:</strong> ${endpoints}
-    </div>
-`;
-
-
-    // ----------------------------
-    // ANIMATED SCORE COUNTER
-    // ----------------------------
-
-    let displayedScore = 0;
-    let scoreElement = document.getElementById("riskScore");
-
-    let counter = setInterval(function () {
-
-        if (displayedScore >= numericScore) {
-            clearInterval(counter);
-            scoreElement.innerText = "Risk Score: " + numericScore + "%";
-        } else {
-            displayedScore += 1;
-            scoreElement.innerText = "Risk Score: " + displayedScore + "%";
+        update() {
+            this.x += this.vx;
+            this.y += this.vy;
+            if (this.y > H + 10) this.reset(false);
         }
-
-    }, 15);
-
-    // ----------------------------
-    // RISK LEVEL + MATURITY INDEX
-    // ----------------------------
-
-    let maturityLevel = "";
-
-    if (numericScore <= 20) {
-        maturityLevel = "Level 5 – Optimized";
-    }
-    else if (numericScore <= 40) {
-        maturityLevel = "Level 4 – Managed";
-    }
-    else if (numericScore <= 60) {
-        maturityLevel = "Level 3 – Defined";
-    }
-    else if (numericScore <= 80) {
-        maturityLevel = "Level 2 – Developing";
-    }
-    else {
-        maturityLevel = "Level 1 – Initial / Weak";
+        draw() {
+            ctx.beginPath();
+            ctx.arc(this.x, this.y, this.r, 0, Math.PI * 2);
+            ctx.fillStyle = `rgba(0,210,255,${this.a})`;
+            ctx.fill();
+        }
     }
 
-    let badge = document.getElementById("riskBadge");
+    function init() {
+        resize();
+        particles = Array.from({ length: 90 }, () => new Particle());
+    }
 
-badge.className = "risk-badge";
+    function drawConnections() {
+        for (let i = 0; i < particles.length; i++) {
+            for (let j = i + 1; j < particles.length; j++) {
+                const dx = particles[i].x - particles[j].x;
+                const dy = particles[i].y - particles[j].y;
+                const dist = Math.sqrt(dx * dx + dy * dy);
+                if (dist < 120) {
+                    const alpha = (1 - dist / 120) * 0.12;
+                    ctx.beginPath();
+                    ctx.moveTo(particles[i].x, particles[i].y);
+                    ctx.lineTo(particles[j].x, particles[j].y);
+                    ctx.strokeStyle = `rgba(0,210,255,${alpha})`;
+                    ctx.lineWidth = 0.5;
+                    ctx.stroke();
+                }
+            }
+        }
+    }
 
-if (riskLevel === "Low Risk") {
-    badge.classList.add("badge-low");
+    function drawGrid() {
+        const step = 80;
+        ctx.strokeStyle = "rgba(0,210,255,0.025)";
+        ctx.lineWidth = 0.5;
+        for (let x = 0; x < W; x += step) {
+            ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, H); ctx.stroke();
+        }
+        for (let y = 0; y < H; y += step) {
+            ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke();
+        }
+    }
+
+    function loop() {
+        ctx.clearRect(0, 0, W, H);
+        drawGrid();
+        drawConnections();
+        particles.forEach(p => { p.update(); p.draw(); });
+        requestAnimationFrame(loop);
+    }
+
+    window.addEventListener("resize", resize);
+    init();
+    loop();
+})();
+
+
+// ----------------------------------------------------------------
+// SCROLL REVEAL
+// ----------------------------------------------------------------
+(function initReveal() {
+    const els = document.querySelectorAll("[data-reveal]");
+    const io  = new IntersectionObserver((entries) => {
+        entries.forEach(e => {
+            if (e.isIntersecting) {
+                const delay = parseInt(e.target.dataset.delay || 0);
+                setTimeout(() => e.target.classList.add("revealed"), delay);
+                io.unobserve(e.target);
+            }
+        });
+    }, { threshold: 0.1 });
+    els.forEach(el => io.observe(el));
+})();
+
+
+// ----------------------------------------------------------------
+// DOMAIN META
+// ----------------------------------------------------------------
+const DOMAIN_META = {
+    network:  {
+        label:  "Network Security",
+        weight: 0.30,
+        compliance: ["ISO 27001 – A.13", "NIST CSF – PR.AC", "CIS Control 12"],
+        adviceBank: {
+            high: "Deploy a Next-Generation Firewall (NGFW) with IDS/IPS. Segment your network into trust zones and enforce strict ingress/egress rules.",
+            mid:  "Upgrade firewall rules and schedule quarterly network vulnerability scans. Disable unused ports and services.",
+            low:  "Continue 24/7 monitoring. Consider periodic red-team exercises to validate network defences."
+        }
+    },
+    access:   {
+        label:  "Access Control",
+        weight: 0.20,
+        compliance: ["ISO 27001 – A.9", "NIST CSF – PR.AC", "CIS Control 5 & 6"],
+        adviceBank: {
+            high: "Enforce MFA across all systems immediately. Implement a Privileged Access Management (PAM) solution and remove all shared/generic accounts.",
+            mid:  "Strengthen password policy (min 12 chars, complexity, 90-day rotation). Audit role assignments and remove excess privileges.",
+            low:  "Maintain regular access reviews. Consider adopting a Zero Trust architecture."
+        }
+    },
+    data:     {
+        label:  "Data Protection",
+        weight: 0.25,
+        compliance: ["ISO 27001 – A.8", "GDPR Article 32", "CIS Control 3 & 13"],
+        adviceBank: {
+            high: "Classify all sensitive data and apply AES-256 encryption at rest and in transit. Implement a Data Loss Prevention (DLP) solution urgently.",
+            mid:  "Complete encryption rollout for all sensitive datasets. Tighten data sharing controls and audit third-party data access.",
+            low:  "Conduct annual data classification reviews. Ensure encryption keys are rotated and stored in a dedicated key management service."
+        }
+    },
+    backup:   {
+        label:  "Backup & Recovery",
+        weight: 0.15,
+        compliance: ["ISO 27001 – A.12.3", "NIST CSF – RC.RP", "CIS Control 10"],
+        adviceBank: {
+            high: "Implement automated daily backups immediately with offsite/cloud redundancy. Create and test a documented Disaster Recovery Plan (DRP).",
+            mid:  "Increase backup frequency to daily. Establish an offsite backup copy and conduct a DR tabletop exercise this quarter.",
+            low:  "Verify backup integrity monthly with automated restore tests. Review RTO/RPO objectives annually."
+        }
+    },
+    employee: {
+        label:  "Employee Awareness",
+        weight: 0.10,
+        compliance: ["ISO 27001 – A.7.2", "NIST CSF – PR.AT", "CIS Control 14 & 17"],
+        adviceBank: {
+            high: "Launch a mandatory security awareness programme immediately. Conduct simulated phishing campaigns quarterly and establish a formal incident reporting policy.",
+            mid:  "Increase training frequency to quarterly. Introduce gamified security awareness modules and formally document the incident reporting procedure.",
+            low:  "Maintain regular training cadence. Consider specialist training for IT staff and leadership on advanced threat topics."
+        }
+    }
+};
+
+// ----------------------------------------------------------------
+// HELPERS
+// ----------------------------------------------------------------
+function classifyRisk(score) {
+    if (score < 30)  return { level: "Low",      badge: "badge-low",      maturity: "Optimised",  color: "#00ffc8" };
+    if (score < 55)  return { level: "Moderate", badge: "badge-moderate", maturity: "Managed",    color: "#00d2ff" };
+    if (score < 75)  return { level: "High",     badge: "badge-high",     maturity: "Developing", color: "#ff9f43" };
+    return               { level: "Critical",    badge: "badge-critical", maturity: "Initial",    color: "#ff4757" };
 }
-else if (riskLevel === "Moderate Risk") {
-    badge.classList.add("badge-moderate");
-}
-else if (riskLevel === "High Risk") {
-    badge.classList.add("badge-high");
-}
-else {
-    badge.classList.add("badge-critical");
+
+function buildSummary(score, cl, name) {
+    const n = name || "The assessed organisation";
+    return `${n} has recorded an overall cybersecurity risk score of ${score}%, classified as <strong>${cl.level}</strong> with a maturity level of <strong>${cl.maturity}</strong>. This assessment spans five critical control domains. Immediate leadership attention is recommended for any domain scoring above 60%.`;
 }
 
-badge.innerText = riskLevel + " | " + maturityLevel;
+function buildDomainBreakdown(p) {
+    const rows = Object.keys(p).map(k => {
+        const pct   = p[k].toFixed(1);
+        const level = p[k] >= 70 ? "HIGH" : p[k] >= 40 ? "MOD" : "LOW";
+        const col   = p[k] >= 70 ? "#ff4757" : p[k] >= 40 ? "#ff9f43" : "#00ffc8";
+        return `<div class="breakdown-row">
+            <div class="breakdown-label">${DOMAIN_META[k].label}</div>
+            <div class="breakdown-bar-wrap"><div class="breakdown-bar" style="width:${pct}%;background:${col};color:${col};"></div></div>
+            <div class="breakdown-pct" style="color:${col}">${pct}%</div>
+            <div class="breakdown-level" style="color:${col}">${level}</div>
+        </div>`;
+    }).join("");
+    return `<div class="domain-breakdown-inner"><h3>DOMAIN EXPOSURE MAP</h3>${rows}</div>`;
+}
 
-    // ----------------------------
-    // EXECUTIVE SUMMARY
-    // ----------------------------
+function buildPriorityRanking(p) {
+    const sorted = Object.entries(p).sort((a, b) => b[1] - a[1])
+        .map(([k, v], i) => `<li><strong>#${i+1} — ${DOMAIN_META[k].label}</strong>: ${v.toFixed(1)}% exposure</li>`)
+        .join("");
+    return `<div class="priority-ranking"><h3>RISK PRIORITY RANKING</h3><ol>${sorted}</ol></div>`;
+}
 
-    let executiveSummary = "";
-
-    if (riskLevel === "Critical Risk") {
-        executiveSummary = "The organization is exposed to critical cybersecurity threats with major control weaknesses requiring immediate corrective action.";
+function buildComplianceMapping(p) {
+    const elevated = Object.entries(p).filter(([, v]) => v >= 40);
+    if (!elevated.length) {
+        return `<div class="compliance-box"><h3>COMPLIANCE MAPPING</h3><p style="font-size:13px;color:var(--text-dim)">All domains within acceptable thresholds. No critical compliance gaps detected.</p></div>`;
     }
-    else if (riskLevel === "High Risk") {
-        executiveSummary = "The organization shows significant security gaps that must be addressed to reduce exposure and operational risk.";
-    }
-    else if (riskLevel === "Moderate Risk") {
-        executiveSummary = "The organization maintains moderate cybersecurity controls but requires structured improvements across key domains.";
-    }
-    else {
-        executiveSummary = "The organization demonstrates a relatively stable cybersecurity posture with controlled risk exposure.";
-    }
+    const rows = elevated.map(([k]) => {
+        const m = DOMAIN_META[k];
+        return `<tr><td>${m.label}</td><td>${m.compliance.join("<br>")}</td></tr>`;
+    }).join("");
+    return `<div class="compliance-box"><h3>COMPLIANCE MAPPING</h3>
+        <table class="compliance-table">
+            <thead><tr><th>Domain</th><th>Frameworks</th></tr></thead>
+            <tbody>${rows}</tbody>
+        </table></div>`;
+}
 
-    document.getElementById("riskSummary").innerText = executiveSummary;
-
-    // ----------------------------
-    // RECOMMENDATION ENGINE
-    // ----------------------------
-
-    let recommendations = [];
-    let priorityTitle = "";
-    let boxColor = "";
-
-    if (riskLevel === "Critical Risk") {
-
-        priorityTitle = "🚨 Immediate Action Required";
-        boxColor = "#ff4d4d";
-
-        recommendations.push("Conduct full-scale cybersecurity audit immediately.");
-        recommendations.push("Deploy enterprise-grade firewall and intrusion detection systems.");
-        recommendations.push("Enable Multi-Factor Authentication across all systems.");
-        recommendations.push("Implement continuous security monitoring.");
-        recommendations.push("Initiate emergency employee cybersecurity training.");
-
-    } else if (riskLevel === "High Risk") {
-
-        priorityTitle = "⚠ High Priority Improvements Needed";
-        boxColor = "#ff9f43";
-
-        recommendations.push("Strengthen network security monitoring.");
-        recommendations.push("Enforce stricter access control mechanisms.");
-        recommendations.push("Improve encryption standards and data protection.");
-        recommendations.push("Enhance backup redundancy and recovery testing.");
-
-    } else if (riskLevel === "Moderate Risk") {
-
-        priorityTitle = "🔍 Security Optimization Recommended";
-        boxColor = "#00c6ff";
-
-        recommendations.push("Review password policies and access segmentation.");
-        recommendations.push("Enhance employee security awareness programs.");
-        recommendations.push("Conduct quarterly vulnerability assessments.");
-
-    } else {
-
-        priorityTitle = "✅ Stable Security Posture";
-        boxColor = "#00ffd5";
-
-        recommendations.push("Maintain current cybersecurity controls.");
-        recommendations.push("Continue periodic monitoring and audits.");
-        recommendations.push("Sustain employee awareness initiatives.");
-    }
-
-    let recommendationBox = document.getElementById("recommendations");
-
-    recommendationBox.innerHTML =
-        "<h3>" + priorityTitle + "</h3><br>" +
-        recommendations.map(r => "• " + r).join("<br>");
-
-    recommendationBox.style.borderLeft = "5px solid " + boxColor;
-    // ----------------------------
-// PREPARE FORM DATA FOR PDF
-// ----------------------------
-
-document.getElementById("formRiskScore").value = riskPercentage;
-document.getElementById("formRiskLevel").value = riskLevel;
-document.getElementById("formMaturity").value = maturityLevel;
-document.getElementById("formSummary").value = executiveSummary;
-
-// ----------------------------
-// ADD COMPANY INFO TO PDF FORM
-// ----------------------------
-
-document.getElementById("formCompanyName").value =
-    document.getElementById("companyName").value || "Confidential Organization";
-
-document.getElementById("formIndustry").value =
-    document.getElementById("industryType").value || "Not Specified";
-
-document.getElementById("formEmployees").value =
-    document.getElementById("employeeCount").value || "N/A";
-
-document.getElementById("formEndpoints").value =
-    document.getElementById("endpointCount").value || "N/A";
-
-document.getElementById("formAssessmentDate").value =
-    document.getElementById("assessmentDate").value || "";
-
-
-document.getElementById("formDomains").value = JSON.stringify([
-    { name: "Network Security", value: networkPercent.toFixed(1) },
-    { name: "Access Control", value: accessPercent.toFixed(1) },
-    { name: "Data Protection", value: dataPercent.toFixed(1) },
-    { name: "Backup & Recovery", value: backupPercent.toFixed(1) },
-    { name: "Employee Awareness", value: employeePercent.toFixed(1) }
-]);
-
-document.getElementById("formRecommendations").value = JSON.stringify(recommendations);
-
-
-    // ----------------------------
-    // CREATE VISUALS
-    // ----------------------------
-
-    createChart({
-        network: networkPercent,
-        access: accessPercent,
-        data: dataPercent,
-        backup: backupPercent,
-        employee: employeePercent
+function buildRecommendations(p) {
+    const items = Object.entries(p).map(([k, v]) => {
+        const m    = DOMAIN_META[k];
+        const tier = v >= 70 ? "high" : v >= 40 ? "mid" : "low";
+        const icon = v >= 70 ? "🔴" : v >= 40 ? "🟡" : "🟢";
+        return `<li>${icon} <strong>${m.label}:</strong> ${m.adviceBank[tier]}</li>`;
     });
-
-    createGauge(numericScore);
-
-    // ----------------------------
-// DOMAIN BREAKDOWN ANALYSIS
-// ----------------------------
-
-let domainData = [
-    { name: "Network Security", value: networkPercent },
-    { name: "Access Control", value: accessPercent },
-    { name: "Data Protection", value: dataPercent },
-    { name: "Backup & Recovery", value: backupPercent },
-    { name: "Employee Awareness", value: employeePercent }
-];
-
-function classifyDomain(score) {
-    if (score <= 30) return { label: "Low", color: "#00ffd5" };
-    if (score <= 60) return { label: "Moderate", color: "#00c6ff" };
-    if (score <= 80) return { label: "High", color: "#ff9f43" };
-    return { label: "Critical", color: "#ff4d4d" };
+    return `<h3>REMEDIATION ROADMAP</h3><ul>${items.join("")}</ul>`;
 }
 
-let breakdownHTML = `
-    <div style="margin-top:30px;">
-        <h3 style="margin-bottom:15px;">Domain Risk Breakdown</h3>
-`;
+// ----------------------------------------------------------------
+// CHARTS
+// ----------------------------------------------------------------
+function createChart(p) {
+    const canvas = document.getElementById("riskChart");
+    if (!canvas) return;
+    if (chartInstance) { chartInstance.destroy(); chartInstance = null; }
 
-let maxValue = Math.max(...domainData.map(d => d.value));
+    const vals = [p.network, p.access, p.data, p.backup, p.employee];
+    const bgs  = vals.map(v =>
+        v >= 70 ? "rgba(255,71,87,0.75)" :
+        v >= 40 ? "rgba(255,159,67,0.75)" :
+                  "rgba(0,255,200,0.65)"
+    );
 
-let highestDomains = domainData.filter(d => d.value === maxValue);
-
-let highestDomain = highestDomains.length === 1 ? highestDomains[0] : null;
-
-
-domainData.forEach(domain => {
-
-    let classification = classifyDomain(domain.value);
-
-    let highlight = highestDomain && domain.name === highestDomain.name
-        ? "box-shadow:0 0 10px rgba(255,77,77,0.4); border:1px solid #ff4d4d;"
-        : "border:1px solid rgba(255,255,255,0.1);";
-
-    breakdownHTML += `
-        <div style="
-            display:flex;
-            justify-content:space-between;
-            align-items:center;
-            padding:12px 16px;
-            margin-bottom:10px;
-            border-radius:12px;
-            background:rgba(255,255,255,0.05);
-            ${highlight}
-        ">
-            <div>
-                <strong>${domain.name}</strong><br>
-                <span style="color:${classification.color}; font-size:13px;">
-                    ${classification.label}
-                </span>
-            </div>
-            <div style="font-weight:600; font-size:14px;">
-                ${domain.value.toFixed(1)}%
-            </div>
-        </div>
-    `;
-});
-
-breakdownHTML += `</div>`;
-
-document.getElementById("domainBreakdown").innerHTML = breakdownHTML;
-
-// ----------------------------
-// RISK PRIORITY RANKING (ENTERPRISE VIEW)
-// ----------------------------
-
-// Sort domains by highest risk
-let sortedDomains = [...domainData].sort((a, b) => b.value - a.value);
-
-let rankingHTML = `
-    <div style="
-        margin-top:40px;
-        padding:20px;
-        border-radius:16px;
-        background:rgba(255,255,255,0.05);
-        backdrop-filter:blur(15px);
-        border:1px solid rgba(255,255,255,0.1);
-    ">
-        <h3 style="margin-bottom:20px;">Risk Priority Ranking</h3>
-`;
-
-sortedDomains.forEach((domain, index) => {
-
-    let rankColor =
-        index === 0 ? "#ff4d4d" :
-        index === 1 ? "#ff9f43" :
-        index === 2 ? "#00c6ff" :
-        "#00ffd5";
-
-    rankingHTML += `
-        <div style="
-            display:flex;
-            justify-content:space-between;
-            align-items:center;
-            padding:14px 18px;
-            margin-bottom:12px;
-            border-radius:12px;
-            background:rgba(255,255,255,0.03);
-            border-left:5px solid ${rankColor};
-        ">
-            <div>
-                <strong>#${index + 1} ${domain.name}</strong>
-            </div>
-            <div style="font-weight:600;">
-                ${domain.value.toFixed(1)}%
-            </div>
-        </div>
-    `;
-});
-
-rankingHTML += `</div>`;
-
-document.getElementById("riskPriorityRanking").innerHTML = rankingHTML;
-
-// ----------------------------
-// COMPLIANCE MAPPING ENGINE
-// ----------------------------
-
-let complianceStatus = "";
-let complianceColor = "";
-
-if (riskLevel === "Low Risk") {
-    complianceStatus = "Mostly Aligned with ISO 27001 & NIST Framework";
-    complianceColor = "#00ffd5";
-}
-else if (riskLevel === "Moderate Risk") {
-    complianceStatus = "Partially Aligned – Improvement Required";
-    complianceColor = "#00c6ff";
-}
-else if (riskLevel === "High Risk") {
-    complianceStatus = "Significant Compliance Gaps Identified";
-    complianceColor = "#ff9f43";
-}
-else {
-    complianceStatus = "Non-Compliant – Immediate Remediation Required";
-    complianceColor = "#ff4d4d";
-}
-
-let complianceHTML = `
-    <div style="
-        margin-top:40px;
-        padding:22px;
-        border-radius:16px;
-        background:rgba(255,255,255,0.05);
-        backdrop-filter:blur(15px);
-        border:1px solid rgba(255,255,255,0.1);
-    ">
-        <h3 style="margin-bottom:18px;">Compliance Mapping Overview</h3>
-
-        <div style="
-            padding:14px 18px;
-            border-radius:10px;
-            background:rgba(255,255,255,0.03);
-            border-left:5px solid ${complianceColor};
-            font-weight:500;
-        ">
-            ${complianceStatus}
-        </div>
-
-        <div style="margin-top:15px; font-size:13px; opacity:0.8;">
-            Reference Frameworks: ISO 27001, NIST CSF, CIS Controls
-        </div>
-    </div>
-`;
-
-document.getElementById("complianceMapping").innerHTML = complianceHTML;
-
-
-
-
-});
-
-
-// ----------------------------
-// BAR CHART
-// ----------------------------
-
-function createChart(domainPercentages) {
-
-    let ctx = document.getElementById("riskChart").getContext("2d");
-
-    if (chartInstance) {
-        chartInstance.destroy();
-    }
-
-    chartInstance = new Chart(ctx, {
-        type: 'bar',
+    chartInstance = new Chart(canvas.getContext("2d"), {
+        type: "bar",
         data: {
-            labels: ["Network", "Access Control", "Data Protection", "Backup", "Employee Awareness"],
+            labels:   ["Network", "Access", "Data", "Backup", "Employee"],
             datasets: [{
-                label: "Domain Risk Percentage",
-                data: [
-                    domainPercentages.network,
-                    domainPercentages.access,
-                    domainPercentages.data,
-                    domainPercentages.backup,
-                    domainPercentages.employee
-                ],
-                backgroundColor: [
-                    "rgba(0, 198, 255, 0.7)",
-                    "rgba(0, 114, 255, 0.7)",
-                    "rgba(0, 255, 213, 0.7)",
-                    "rgba(255, 159, 67, 0.7)",
-                    "rgba(255, 107, 107, 0.7)"
-                ],
-                borderRadius: 14,
-                borderSkipped: false
+                label:           "Risk %",
+                data:            vals,
+                backgroundColor: bgs,
+                borderColor:     bgs.map(c => c.replace("0.75","1").replace("0.65","1")),
+                borderWidth:     1,
+                borderRadius:    10,
+                borderSkipped:   false
             }]
         },
         options: {
-            responsive: true,
+            responsive:          true,
             maintainAspectRatio: false,
-            animation: {
-                duration: 1200,
-                easing: 'easeOutQuart'
-            },
+            animation:           { duration: 1000, easing: "easeOutQuart" },
             plugins: {
-                legend: {
-                    labels: { color: "#ffffff" }
-                }
+                legend: { labels: { color: "rgba(200,223,232,0.6)", font: { family: "Syne" } } }
             },
             scales: {
-                x: {
-                    ticks: { color: "#ffffff" },
-                    grid: { display: false }
-                },
                 y: {
                     beginAtZero: true,
-                    max: 100,
-                    ticks: { color: "#ffffff" },
-                    grid: { color: "rgba(255,255,255,0.08)" }
+                    max:         100,
+                    ticks: { color: "rgba(200,223,232,0.5)", callback: v => v + "%" },
+                    grid:  { color: "rgba(0,210,255,0.06)" }
+                },
+                x: {
+                    ticks: { color: "rgba(200,223,232,0.5)", font: { family: "Syne", weight: "700" } },
+                    grid:  { color: "rgba(0,210,255,0.04)" }
                 }
             }
         }
     });
 }
 
+function createGauge(score, color) {
+    const canvas = document.getElementById("riskGauge");
+    if (!canvas) return;
+    if (gaugeInstance) { gaugeInstance.destroy(); gaugeInstance = null; }
 
-// ----------------------------
-// CIRCULAR GAUGE
-// ----------------------------
-
-function createGauge(percentage) {
-
-    let ctx = document.getElementById("riskGauge").getContext("2d");
-
-    if (gaugeInstance) {
-        gaugeInstance.destroy();
-    }
-
-    gaugeInstance = new Chart(ctx, {
-        type: 'doughnut',
+    gaugeInstance = new Chart(canvas.getContext("2d"), {
+        type: "doughnut",
         data: {
             datasets: [{
-                data: [percentage, 100 - percentage],
-                backgroundColor: [
-                    percentage > 80 ? "#ff4d4d" :
-                    percentage > 60 ? "#ff9f43" :
-                    percentage > 30 ? "#00c6ff" :
-                    "#00ffd5",
-                    "rgba(255,255,255,0.08)"
-                ],
-                borderWidth: 0
+                data:            [score, 100 - score],
+                backgroundColor: [color, "rgba(255,255,255,0.04)"],
+                borderWidth:     0,
+                hoverOffset:     0
             }]
         },
         options: {
-            cutout: '75%',
-            responsive: true,
-            maintainAspectRatio: false,
-            animation: {
-                duration: 1200
-            },
+            cutout:              "78%",
+            responsive:          false,
+            animation:           { duration: 1200, easing: "easeOutQuart" },
             plugins: {
-                tooltip: { enabled: false },
-                legend: { display: false }
+                legend:  { display: false },
+                tooltip: { enabled: false }
             }
         },
         plugins: [{
-            id: 'centerText',
-            beforeDraw(chart) {
-                const { width, height, ctx } = chart;
+            id: "gaugeCenter",
+            afterDraw(chart) {
+                const { ctx, chartArea: { width, height, left, top } } = chart;
+                const cx = left + width / 2;
+                const cy = top + height / 2;
                 ctx.save();
-                ctx.font = "600 " + (height / 7) + "px Poppins";
-                ctx.fillStyle = "#ffffff";
-                ctx.textAlign = "center";
+
+                // outer glow ring
+                const grad = ctx.createRadialGradient(cx, cy, 60, cx, cy, 100);
+                grad.addColorStop(0, color.replace(")", ",0.12)").replace("rgb","rgba").replace("#","").replace(/^([0-9a-f]{6})(.*)$/, (_, hex, rest) => {
+                    const r = parseInt(hex.substr(0,2),16);
+                    const g = parseInt(hex.substr(2,2),16);
+                    const b = parseInt(hex.substr(4,2),16);
+                    return `rgba(${r},${g},${b},0.12)`;
+                }));
+                grad.addColorStop(1, "transparent");
+
+                ctx.font         = `800 ${Math.round(width * 0.22)}px Syne, sans-serif`;
+                ctx.fillStyle    = "#ffffff";
+                ctx.textAlign    = "center";
                 ctx.textBaseline = "middle";
-                ctx.fillText(Math.round(percentage) + "%", width / 2, height / 2);
+                ctx.fillText(score.toFixed(1) + "%", cx, cy - 10);
+
+                ctx.font         = "400 11px DM Sans, sans-serif";
+                ctx.fillStyle    = color;
+                ctx.letterSpacing = "2px";
+                ctx.fillText("RISK", cx, cy + 18);
+
                 ctx.restore();
             }
         }]
     });
 }
 
-// ----------------------------
-// PDF REPORT DOWNLOAD ENGINE
-// ----------------------------
 
-document.addEventListener("DOMContentLoaded", function () {
+// ----------------------------------------------------------------
+// MAIN HANDLER
+// ----------------------------------------------------------------
+document.addEventListener("DOMContentLoaded", () => {
 
-    const downloadBtn = document.getElementById("downloadReport");
+    const btn = document.getElementById("evaluateBtn");
+    if (!btn) { console.error("evaluateBtn not found"); return; }
 
-    if (!downloadBtn) return;
+    btn.addEventListener("click", function () {
 
-    
-    });
+        // collect inputs
+        const inputs = document.querySelectorAll(".risk-input");
+        if (!inputs.length) { alert("No inputs found."); return; }
 
-});
-
-// ----------------------------
-// POPULATE FORM BEFORE DOWNLOAD
-// ----------------------------
-
-document.getElementById("reportForm").addEventListener("submit", function () {
-
-    // ----------------------------
-// COMPANY INFO FOR PDF
-// ----------------------------
-
-document.getElementById("formCompanyName").value =
-    document.getElementById("companyName").value || "Not Provided";
-
-document.getElementById("formIndustry").value =
-    document.getElementById("industryType").value || "Not Provided";
-
-document.getElementById("formEmployees").value =
-    document.getElementById("employeeCount").value || "Not Provided";
-
-document.getElementById("formEndpoints").value =
-    document.getElementById("endpointCount").value || "Not Provided";
-
-document.getElementById("formAssessmentDate").value =
-    document.getElementById("assessmentDate").value || "Not Provided";
-
-    // Risk Score
-    let riskScoreText = document.getElementById("riskScore").innerText;
-    let riskScore = riskScoreText.replace("Risk Score: ", "").replace("%", "");
-
-    document.getElementById("formRiskScore").value = riskScore;
-
-    // Risk Level & Maturity
-    let riskLevelText = document.getElementById("riskLevel").innerText;
-
-    let parts = riskLevelText.split("|");
-
-    let riskLevel = parts[0].replace("Classification: ", "").trim();
-    let maturity = parts[1] ? parts[1].replace("Maturity: ", "").trim() : "";
-
-    document.getElementById("formRiskLevel").value = riskLevel;
-    document.getElementById("formMaturity").value = maturity;
-
-    // Executive Summary
-    let summary = document.getElementById("riskSummary").innerText;
-    document.getElementById("formSummary").value = summary;
-
-    // Domain Breakdown
-    let domainElements = document.querySelectorAll("#domainBreakdown div");
-
-    let domains = [
-        { name: "Network Security", value: networkPercent.toFixed(1) },
-    { name: "Access Control", value: accessPercent.toFixed(1) },
-    { name: "Data Protection", value: dataPercent.toFixed(1) },
-    { name: "Backup & Recovery", value: backupPercent.toFixed(1) },
-    { name: "Employee Awareness", value: employeePercent.toFixed(1) }
-    ];
-
-    domainElements.forEach(element => {
-        let lines = element.innerText.split("\n");
-        let name = lines[0].trim();
-        let percentMatch = element.innerText.match(/\d+(\.\d+)?/);
-        let value = percentMatch ? percentMatch[0] : "0";
-
-        domains.push({
-            name: name,
-            value: value
+        let raw = { network: 0, access: 0, data: 0, backup: 0, employee: 0 };
+        inputs.forEach((inp, i) => {
+            const v = parseInt(inp.value) || 0;
+            if      (i < 3)  raw.network  += v;
+            else if (i < 6)  raw.access   += v;
+            else if (i < 9)  raw.data     += v;
+            else if (i < 12) raw.backup   += v;
+            else             raw.employee += v;
         });
-        
+
+        const max = 15;
+        const p = {
+            network:  (raw.network  / max) * 100,
+            access:   (raw.access   / max) * 100,
+            data:     (raw.data     / max) * 100,
+            backup:   (raw.backup   / max) * 100,
+            employee: (raw.employee / max) * 100
+        };
+
+        const weighted = Object.entries(p).reduce((s, [k, v]) => s + v * DOMAIN_META[k].weight, 0);
+        const score    = parseFloat(weighted.toFixed(2));
+        const cl       = classifyRisk(score);
+
+        const companyName    = document.getElementById("companyName")?.value.trim()    || "";
+        const industryType   = document.getElementById("industryType")?.value.trim()   || "Not Specified";
+        const employeeCount  = document.getElementById("employeeCount")?.value.trim()  || "N/A";
+        const endpointCount  = document.getElementById("endpointCount")?.value.trim()  || "N/A";
+        const assessmentDate = document.getElementById("assessmentDate")?.value        || new Date().toISOString().slice(0,10);
+
+        // show results
+        const resultsEl = document.getElementById("resultsSection");
+        resultsEl.style.display = "block";
+
+        // company banner
+        const sumEl = document.getElementById("companySummary");
+        if (sumEl) sumEl.innerHTML = `
+            <div class="company-summary-banner">
+                <span><strong>Organisation:</strong> ${companyName || "—"}</span>
+                <span><strong>Industry:</strong> ${industryType}</span>
+                <span><strong>Employees:</strong> ${employeeCount}</span>
+                <span><strong>Endpoints:</strong> ${endpointCount}</span>
+                <span><strong>Date:</strong> ${assessmentDate}</span>
+            </div>`;
+
+        // score display
+        const scoreEl = document.getElementById("riskScore");
+        if (scoreEl) {
+            scoreEl.innerText = score.toFixed(1) + "%";
+            scoreEl.style.color = cl.color;
+            scoreEl.style.textShadow = `0 0 40px ${cl.color}60, 0 0 80px ${cl.color}30`;
+        }
+
+        const badgeEl = document.getElementById("riskBadge");
+        if (badgeEl) { badgeEl.className = `risk-badge ${cl.badge}`; badgeEl.innerText = cl.level; }
+
+        const matEl = document.getElementById("maturity");
+        if (matEl) matEl.innerText = "Maturity Level: " + cl.maturity;
+
+        // summary
+        const execText = buildSummary(score.toFixed(1), cl, companyName);
+        const sumTextEl = document.getElementById("riskSummary");
+        if (sumTextEl) sumTextEl.innerHTML = execText;
+
+        // domain sections
+        const breakdown = document.getElementById("domainBreakdown");
+        if (breakdown) breakdown.innerHTML = buildDomainBreakdown(p);
+
+        const ranking = document.getElementById("riskPriorityRanking");
+        if (ranking) ranking.innerHTML = buildPriorityRanking(p);
+
+        const compliance = document.getElementById("complianceMapping");
+        if (compliance) compliance.innerHTML = buildComplianceMapping(p);
+
+        const recs = document.getElementById("recommendations");
+        const recsHTML = buildRecommendations(p);
+        if (recs) recs.innerHTML = recsHTML;
+
+        // pdf hidden fields
+        const recsPlain = Object.entries(p).map(([k, v]) => {
+            const tier = v >= 70 ? "high" : v >= 40 ? "mid" : "low";
+            return `${DOMAIN_META[k].label}: ${DOMAIN_META[k].adviceBank[tier]}`;
+        });
+        const domainsJSON = Object.entries(p).map(([k, v]) => ({ name: DOMAIN_META[k].label, value: v.toFixed(1) }));
+
+        document.getElementById("formCompanyName").value     = companyName;
+        document.getElementById("formIndustryType").value    = industryType;
+        document.getElementById("formEmployeeCount").value   = employeeCount;
+        document.getElementById("formEndpointCount").value   = endpointCount;
+        document.getElementById("formAssessmentDate").value  = assessmentDate;
+        document.getElementById("formRiskScore").value       = score.toFixed(2);
+        document.getElementById("formRiskLevel").value       = cl.level;
+        document.getElementById("formMaturity").value        = cl.maturity;
+        document.getElementById("formSummary").value         = execText.replace(/<[^>]+>/g, "");
+        document.getElementById("formDomains").value         = JSON.stringify(domainsJSON);
+        document.getElementById("formRecommendations").value = JSON.stringify(recsPlain);
+
+        // charts + scroll
+        setTimeout(() => {
+            createChart(p);
+            createGauge(score, cl.color);
+            resultsEl.scrollIntoView({ behavior: "smooth", block: "start" });
+        }, 150);
     });
-
-    document.getElementById("formDomains").value = JSON.stringify(domains);
-
-    // Recommendations
-    let recommendationText = document.getElementById("recommendations").innerText.split("\n");
-    recommendationText.shift(); // remove title
-
-    document.getElementById("formRecommendations").value =
-        JSON.stringify(recommendationText);
-
 });
