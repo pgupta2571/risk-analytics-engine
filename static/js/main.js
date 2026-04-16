@@ -5,15 +5,14 @@
 let chartInstance = null;
 let gaugeInstance  = null;
 
-// ----------------------------------------------------------------
-// PARTICLE BACKGROUND
-// ----------------------------------------------------------------
+// ============================================================
+//  PARTICLE BACKGROUND
+// ============================================================
 (function initParticles() {
     const canvas = document.getElementById("bgCanvas");
     if (!canvas) return;
     const ctx = canvas.getContext("2d");
-
-    let W, H, particles = [], connections = [];
+    let W, H;
 
     function resize() {
         W = canvas.width  = window.innerWidth;
@@ -43,6 +42,7 @@ let gaugeInstance  = null;
         }
     }
 
+    let particles;
     function init() {
         resize();
         particles = Array.from({ length: 90 }, () => new Particle());
@@ -93,9 +93,9 @@ let gaugeInstance  = null;
 })();
 
 
-// ----------------------------------------------------------------
-// SCROLL REVEAL
-// ----------------------------------------------------------------
+// ============================================================
+//  SCROLL REVEAL
+// ============================================================
 (function initReveal() {
     const els = document.querySelectorAll("[data-reveal]");
     const io  = new IntersectionObserver((entries) => {
@@ -111,9 +111,144 @@ let gaugeInstance  = null;
 })();
 
 
-// ----------------------------------------------------------------
-// DOMAIN META
-// ----------------------------------------------------------------
+// ============================================================
+//  CUSTOM DROPDOWN ENGINE
+// ============================================================
+(function initDropdowns() {
+
+    // Close every open dropdown except optionally one to keep open
+    function closeAll(except) {
+        document.querySelectorAll(".c-select--open").forEach(el => {
+            if (el !== except) {
+                el.classList.remove("c-select--open");
+                el.setAttribute("aria-expanded", "false");
+            }
+        });
+    }
+
+    // Open a specific dropdown
+    function openDropdown(el) {
+        closeAll(el);
+        el.classList.add("c-select--open");
+        el.setAttribute("aria-expanded", "true");
+    }
+
+    // Close a specific dropdown
+    function closeDropdown(el) {
+        el.classList.remove("c-select--open");
+        el.setAttribute("aria-expanded", "false");
+    }
+
+    // Apply a selection to a dropdown
+    function selectOption(dropdown, optionEl) {
+        const val   = optionEl.dataset.val;
+        const label = optionEl.textContent.trim();
+
+        // Update data-value on root (this is what the calculator reads)
+        dropdown.dataset.value = val;
+
+        // Update displayed label
+        const labelEl = dropdown.querySelector(".c-select__label");
+        if (labelEl) labelEl.textContent = label;
+
+        // Update selected class on all options
+        dropdown.querySelectorAll(".c-select__option").forEach(o => {
+            o.classList.toggle("c-select__option--selected", o === optionEl);
+        });
+
+        // Close after selection
+        closeDropdown(dropdown);
+
+        // Dispatch a change event so external listeners (if any) can react
+        dropdown.dispatchEvent(new CustomEvent("change", { bubbles: true, detail: { value: val, label } }));
+    }
+
+    // ── Wire up every .c-select ──────────────────────────────
+    document.querySelectorAll(".c-select").forEach(dropdown => {
+
+        const trigger  = dropdown.querySelector(".c-select__trigger");
+        const options  = dropdown.querySelectorAll(".c-select__option");
+
+        // ARIA
+        dropdown.setAttribute("role", "combobox");
+        dropdown.setAttribute("aria-expanded", "false");
+        dropdown.setAttribute("aria-haspopup", "listbox");
+
+        const ddPanel = dropdown.querySelector(".c-select__dropdown");
+        if (ddPanel) ddPanel.setAttribute("role", "listbox");
+        options.forEach(o => o.setAttribute("role", "option"));
+
+        // Click on trigger → toggle
+        trigger.addEventListener("click", (e) => {
+            e.stopPropagation();
+            const isOpen = dropdown.classList.contains("c-select--open");
+            isOpen ? closeDropdown(dropdown) : openDropdown(dropdown);
+        });
+
+        // Click on option → select
+        options.forEach(optionEl => {
+            optionEl.addEventListener("click", (e) => {
+                e.stopPropagation();
+                selectOption(dropdown, optionEl);
+            });
+        });
+
+        // Keyboard navigation
+        dropdown.addEventListener("keydown", (e) => {
+            const isOpen = dropdown.classList.contains("c-select--open");
+            const opts   = [...dropdown.querySelectorAll(".c-select__option")];
+            const current = dropdown.querySelector(".c-select__option--selected");
+            const idx     = opts.indexOf(current);
+
+            switch (e.key) {
+                case "Enter":
+                case " ":
+                    e.preventDefault();
+                    isOpen
+                        ? (current && selectOption(dropdown, current))
+                        : openDropdown(dropdown);
+                    break;
+                case "Escape":
+                    closeDropdown(dropdown);
+                    dropdown.focus();
+                    break;
+                case "ArrowDown":
+                    e.preventDefault();
+                    if (!isOpen) { openDropdown(dropdown); break; }
+                    if (idx < opts.length - 1) {
+                        opts[idx + 1].classList.add("c-select__option--selected");
+                        current?.classList.remove("c-select__option--selected");
+                    }
+                    break;
+                case "ArrowUp":
+                    e.preventDefault();
+                    if (!isOpen) { openDropdown(dropdown); break; }
+                    if (idx > 0) {
+                        opts[idx - 1].classList.add("c-select__option--selected");
+                        current?.classList.remove("c-select__option--selected");
+                    }
+                    break;
+                case "Tab":
+                    closeDropdown(dropdown);
+                    break;
+            }
+        });
+    });
+
+    // ── Global click → close all ─────────────────────────────
+    document.addEventListener("click", () => closeAll());
+
+    // ── Global Escape ────────────────────────────────────────
+    document.addEventListener("keydown", (e) => {
+        if (e.key === "Escape") closeAll();
+    });
+
+})();
+
+
+// ============================================================
+//  DOMAIN META
+// ============================================================
 const DOMAIN_META = {
     network:  {
         label:  "Network Security",
@@ -167,9 +302,10 @@ const DOMAIN_META = {
     }
 };
 
-// ----------------------------------------------------------------
-// HELPERS
-// ----------------------------------------------------------------
+
+// ============================================================
+//  RISK HELPERS
+// ============================================================
 function classifyRisk(score) {
     if (score < 30)  return { level: "Low",      badge: "badge-low",      maturity: "Optimised",  color: "#00ffc8" };
     if (score < 55)  return { level: "Moderate", badge: "badge-moderate", maturity: "Managed",    color: "#00d2ff" };
@@ -189,7 +325,9 @@ function buildDomainBreakdown(p) {
         const col   = p[k] >= 70 ? "#ff4757" : p[k] >= 40 ? "#ff9f43" : "#00ffc8";
         return `<div class="breakdown-row">
             <div class="breakdown-label">${DOMAIN_META[k].label}</div>
-            <div class="breakdown-bar-wrap"><div class="breakdown-bar" style="width:${pct}%;background:${col};color:${col};"></div></div>
+            <div class="breakdown-bar-wrap">
+                <div class="breakdown-bar" style="width:${pct}%;background:${col};color:${col};"></div>
+            </div>
             <div class="breakdown-pct" style="color:${col}">${pct}%</div>
             <div class="breakdown-level" style="color:${col}">${level}</div>
         </div>`;
@@ -198,7 +336,8 @@ function buildDomainBreakdown(p) {
 }
 
 function buildPriorityRanking(p) {
-    const sorted = Object.entries(p).sort((a, b) => b[1] - a[1])
+    const sorted = Object.entries(p)
+        .sort((a, b) => b[1] - a[1])
         .map(([k, v], i) => `<li><strong>#${i+1} — ${DOMAIN_META[k].label}</strong>: ${v.toFixed(1)}% exposure</li>`)
         .join("");
     return `<div class="priority-ranking"><h3>RISK PRIORITY RANKING</h3><ol>${sorted}</ol></div>`;
@@ -230,9 +369,10 @@ function buildRecommendations(p) {
     return `<h3>REMEDIATION ROADMAP</h3><ul>${items.join("")}</ul>`;
 }
 
-// ----------------------------------------------------------------
-// CHARTS
-// ----------------------------------------------------------------
+
+// ============================================================
+//  CHARTS
+// ============================================================
 function createChart(p) {
     const canvas = document.getElementById("riskChart");
     if (!canvas) return;
@@ -269,7 +409,7 @@ function createChart(p) {
             scales: {
                 y: {
                     beginAtZero: true,
-                    max:         100,
+                    max: 100,
                     ticks: { color: "rgba(200,223,232,0.5)", callback: v => v + "%" },
                     grid:  { color: "rgba(0,210,255,0.06)" }
                 },
@@ -313,28 +453,14 @@ function createGauge(score, color) {
                 const cx = left + width / 2;
                 const cy = top + height / 2;
                 ctx.save();
-
-                // outer glow ring
-                const grad = ctx.createRadialGradient(cx, cy, 60, cx, cy, 100);
-                grad.addColorStop(0, color.replace(")", ",0.12)").replace("rgb","rgba").replace("#","").replace(/^([0-9a-f]{6})(.*)$/, (_, hex, rest) => {
-                    const r = parseInt(hex.substr(0,2),16);
-                    const g = parseInt(hex.substr(2,2),16);
-                    const b = parseInt(hex.substr(4,2),16);
-                    return `rgba(${r},${g},${b},0.12)`;
-                }));
-                grad.addColorStop(1, "transparent");
-
                 ctx.font         = `800 ${Math.round(width * 0.22)}px Syne, sans-serif`;
                 ctx.fillStyle    = "#ffffff";
                 ctx.textAlign    = "center";
                 ctx.textBaseline = "middle";
                 ctx.fillText(score.toFixed(1) + "%", cx, cy - 10);
-
-                ctx.font         = "400 11px DM Sans, sans-serif";
-                ctx.fillStyle    = color;
-                ctx.letterSpacing = "2px";
+                ctx.font      = "400 11px DM Sans, sans-serif";
+                ctx.fillStyle = color;
                 ctx.fillText("RISK", cx, cy + 18);
-
                 ctx.restore();
             }
         }]
@@ -342,9 +468,9 @@ function createGauge(score, color) {
 }
 
 
-// ----------------------------------------------------------------
-// MAIN HANDLER
-// ----------------------------------------------------------------
+// ============================================================
+//  MAIN EVALUATE HANDLER
+// ============================================================
 document.addEventListener("DOMContentLoaded", () => {
 
     const btn = document.getElementById("evaluateBtn");
@@ -352,13 +478,16 @@ document.addEventListener("DOMContentLoaded", () => {
 
     btn.addEventListener("click", function () {
 
-        // collect inputs
+        // ── 1. Read values from custom dropdowns ───────────────
+        // .risk-input is now a .c-select div; value is in data-value attribute
         const inputs = document.querySelectorAll(".risk-input");
         if (!inputs.length) { alert("No inputs found."); return; }
 
         let raw = { network: 0, access: 0, data: 0, backup: 0, employee: 0 };
+
         inputs.forEach((inp, i) => {
-            const v = parseInt(inp.value) || 0;
+            // Support both legacy <select> and new .c-select divs
+            const v = parseInt(inp.dataset?.value ?? inp.value) || 0;
             if      (i < 3)  raw.network  += v;
             else if (i < 6)  raw.access   += v;
             else if (i < 9)  raw.data     += v;
@@ -366,32 +495,36 @@ document.addEventListener("DOMContentLoaded", () => {
             else             raw.employee += v;
         });
 
-        const max = 15;
+        // ── 2. Percentages ─────────────────────────────────────
+        const domMax = 15;
         const p = {
-            network:  (raw.network  / max) * 100,
-            access:   (raw.access   / max) * 100,
-            data:     (raw.data     / max) * 100,
-            backup:   (raw.backup   / max) * 100,
-            employee: (raw.employee / max) * 100
+            network:  (raw.network  / domMax) * 100,
+            access:   (raw.access   / domMax) * 100,
+            data:     (raw.data     / domMax) * 100,
+            backup:   (raw.backup   / domMax) * 100,
+            employee: (raw.employee / domMax) * 100
         };
 
+        // ── 3. Weighted overall score ──────────────────────────
         const weighted = Object.entries(p).reduce((s, [k, v]) => s + v * DOMAIN_META[k].weight, 0);
         const score    = parseFloat(weighted.toFixed(2));
         const cl       = classifyRisk(score);
 
+        // ── 4. Profile fields ──────────────────────────────────
         const companyName    = document.getElementById("companyName")?.value.trim()    || "";
         const industryType   = document.getElementById("industryType")?.value.trim()   || "Not Specified";
         const employeeCount  = document.getElementById("employeeCount")?.value.trim()  || "N/A";
         const endpointCount  = document.getElementById("endpointCount")?.value.trim()  || "N/A";
         const assessmentDate = document.getElementById("assessmentDate")?.value        || new Date().toISOString().slice(0,10);
 
-        // show results
+        // ── 5. Show results ────────────────────────────────────
         const resultsEl = document.getElementById("resultsSection");
         resultsEl.style.display = "block";
 
-        // company banner
+        // ── 6. Company banner ──────────────────────────────────
         const sumEl = document.getElementById("companySummary");
-        if (sumEl) sumEl.innerHTML = `
+        if (sumEl) {
+            sumEl.innerHTML = `
             <div class="company-summary-banner">
                 <span><strong>Organisation:</strong> ${companyName || "—"}</span>
                 <span><strong>Industry:</strong> ${industryType}</span>
@@ -399,46 +532,49 @@ document.addEventListener("DOMContentLoaded", () => {
                 <span><strong>Endpoints:</strong> ${endpointCount}</span>
                 <span><strong>Date:</strong> ${assessmentDate}</span>
             </div>`;
-
-        // score display
-        const scoreEl = document.getElementById("riskScore");
-        if (scoreEl) {
-            scoreEl.innerText = score.toFixed(1) + "%";
-            scoreEl.style.color = cl.color;
-            scoreEl.style.textShadow = `0 0 40px ${cl.color}60, 0 0 80px ${cl.color}30`;
         }
 
+        // ── 7. Score & badge ───────────────────────────────────
+        const scoreEl = document.getElementById("riskScore");
+        if (scoreEl) {
+            scoreEl.innerText      = score.toFixed(1) + "%";
+            scoreEl.style.color    = cl.color;
+            scoreEl.style.textShadow = `0 0 40px ${cl.color}60, 0 0 80px ${cl.color}30`;
+        }
         const badgeEl = document.getElementById("riskBadge");
         if (badgeEl) { badgeEl.className = `risk-badge ${cl.badge}`; badgeEl.innerText = cl.level; }
 
         const matEl = document.getElementById("maturity");
         if (matEl) matEl.innerText = "Maturity Level: " + cl.maturity;
 
-        // summary
-        const execText = buildSummary(score.toFixed(1), cl, companyName);
+        // ── 8. Executive summary ───────────────────────────────
+        const execText  = buildSummary(score.toFixed(1), cl, companyName);
         const sumTextEl = document.getElementById("riskSummary");
         if (sumTextEl) sumTextEl.innerHTML = execText;
 
-        // domain sections
-        const breakdown = document.getElementById("domainBreakdown");
-        if (breakdown) breakdown.innerHTML = buildDomainBreakdown(p);
+        // ── 9. Sub-sections ────────────────────────────────────
+        const breakdownEl = document.getElementById("domainBreakdown");
+        if (breakdownEl) breakdownEl.innerHTML = buildDomainBreakdown(p);
 
-        const ranking = document.getElementById("riskPriorityRanking");
-        if (ranking) ranking.innerHTML = buildPriorityRanking(p);
+        const rankingEl = document.getElementById("riskPriorityRanking");
+        if (rankingEl) rankingEl.innerHTML = buildPriorityRanking(p);
 
-        const compliance = document.getElementById("complianceMapping");
-        if (compliance) compliance.innerHTML = buildComplianceMapping(p);
+        const complianceEl = document.getElementById("complianceMapping");
+        if (complianceEl) complianceEl.innerHTML = buildComplianceMapping(p);
 
-        const recs = document.getElementById("recommendations");
+        const recsEl   = document.getElementById("recommendations");
         const recsHTML = buildRecommendations(p);
-        if (recs) recs.innerHTML = recsHTML;
+        if (recsEl) recsEl.innerHTML = recsHTML;
 
-        // pdf hidden fields
+        // ── 10. Populate PDF hidden fields ─────────────────────
         const recsPlain = Object.entries(p).map(([k, v]) => {
             const tier = v >= 70 ? "high" : v >= 40 ? "mid" : "low";
             return `${DOMAIN_META[k].label}: ${DOMAIN_META[k].adviceBank[tier]}`;
         });
-        const domainsJSON = Object.entries(p).map(([k, v]) => ({ name: DOMAIN_META[k].label, value: v.toFixed(1) }));
+        const domainsJSON = Object.entries(p).map(([k, v]) => ({
+            name:  DOMAIN_META[k].label,
+            value: v.toFixed(1)
+        }));
 
         document.getElementById("formCompanyName").value     = companyName;
         document.getElementById("formIndustryType").value    = industryType;
@@ -452,7 +588,7 @@ document.addEventListener("DOMContentLoaded", () => {
         document.getElementById("formDomains").value         = JSON.stringify(domainsJSON);
         document.getElementById("formRecommendations").value = JSON.stringify(recsPlain);
 
-        // charts + scroll
+        // ── 11. Charts + scroll ────────────────────────────────
         setTimeout(() => {
             createChart(p);
             createGauge(score, cl.color);
