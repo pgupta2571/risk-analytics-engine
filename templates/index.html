@@ -6,8 +6,8 @@
     <title>CyberRisk — SME Security Assessment</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="/static/css/style.css?v=3">
-    <script src="{{ url_for('static', filename='js/main.js') }}?v=4"></script>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 </head>
 <body>
 
@@ -16,6 +16,9 @@
 
 <div class="container">
 
+    <!-- ═══════════════════════════════════ -->
+    <!-- HEADER                              -->
+    <!-- ═══════════════════════════════════ -->
     <header class="header" data-reveal>
         <div class="header-eyebrow">ENTERPRISE SECURITY PLATFORM v2.4</div>
         <h1 class="header-title">
@@ -25,6 +28,9 @@
         <div class="header-line"></div>
     </header>
 
+    <!-- ═══════════════════════════════════ -->
+    <!-- ORGANISATION PROFILE               -->
+    <!-- ═══════════════════════════════════ -->
     <section class="company-section glass-panel" data-reveal data-delay="80">
         <div class="section-tag">01 — ORGANISATION PROFILE</div>
         <div class="company-grid">
@@ -51,273 +57,174 @@
         </div>
     </section>
 
+    <!-- ═══════════════════════════════════ -->
+    <!-- SECTION HEADER                      -->
+    <!-- ═══════════════════════════════════ -->
     <div class="section-header" data-reveal data-delay="120">
         <div class="section-tag">02 — RISK DOMAINS</div>
         <p class="section-desc">Evaluate your posture across five critical security control domains</p>
     </div>
 
+    <!-- ═══════════════════════════════════ -->
+    <!-- RISK DOMAIN CARDS                  -->
+    <!-- ═══════════════════════════════════ -->
     <div class="card-grid">
 
-        <!-- ═══════════════════════════════════════ -->
-        <!-- CARD 1 — Network Security               -->
-        <!-- ═══════════════════════════════════════ -->
+        <!-- Card 1: Network Security -->
         <div class="card" data-reveal data-delay="160">
             <div class="card-inner">
                 <div class="card-num">01</div>
                 <div class="card-icon-wrap">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" class="card-svg"><path d="M9 3H5a2 2 0 00-2 2v4m6-6h10a2 2 0 012 2v4M9 3v18m0 0h10a2 2 0 002-2v-4M9 21H5a2 2 0 01-2-2v-4m0 0h18"/></svg>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" class="card-svg">
+                        <path d="M9 3H5a2 2 0 00-2 2v4m6-6h10a2 2 0 012 2v4M9 3v18m0 0h10a2 2 0 002-2v-4M9 21H5a2 2 0 01-2-2v-4m0 0h18"/>
+                    </svg>
                 </div>
                 <h2>Network Security</h2>
                 <div class="card-controls">
-
-                    <div class="c-select risk-input" data-value="1" tabindex="0">
-                        <div class="c-select__trigger">
-                            <span class="c-select__label">Firewall Properly Configured</span>
-                            <span class="c-select__arrow"><svg viewBox="0 0 10 6" fill="none"><path d="M1 1l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
-                        </div>
-                        <div class="c-select__dropdown">
-                            <div class="c-select__option c-select__option--selected" data-val="1">Firewall Properly Configured</div>
-                            <div class="c-select__option" data-val="3">Basic Firewall</div>
-                            <div class="c-select__option" data-val="5">No Firewall</div>
-                        </div>
-                    </div>
-
-                    <div class="c-select risk-input" data-value="1" tabindex="0">
-                        <div class="c-select__trigger">
-                            <span class="c-select__label">24/7 Monitoring</span>
-                            <span class="c-select__arrow"><svg viewBox="0 0 10 6" fill="none"><path d="M1 1l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
-                        </div>
-                        <div class="c-select__dropdown">
-                            <div class="c-select__option c-select__option--selected" data-val="1">24/7 Monitoring</div>
-                            <div class="c-select__option" data-val="3">Basic Log Monitoring</div>
-                            <div class="c-select__option" data-val="5">No Monitoring</div>
-                        </div>
-                    </div>
-
-                    <div class="c-select risk-input" data-value="1" tabindex="0">
-                        <div class="c-select__trigger">
-                            <span class="c-select__label">Secure Internal Network</span>
-                            <span class="c-select__arrow"><svg viewBox="0 0 10 6" fill="none"><path d="M1 1l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
-                        </div>
-                        <div class="c-select__dropdown">
-                            <div class="c-select__option c-select__option--selected" data-val="1">Secure Internal Network</div>
-                            <div class="c-select__option" data-val="3">Occasional Public WiFi</div>
-                            <div class="c-select__option" data-val="5">Regular Public WiFi Usage</div>
-                        </div>
-                    </div>
-
+                    <select class="risk-input">
+                        <option value="1">Firewall Properly Configured</option>
+                        <option value="3">Basic Firewall</option>
+                        <option value="5">No Firewall</option>
+                    </select>
+                    <select class="risk-input">
+                        <option value="1">24/7 Monitoring</option>
+                        <option value="3">Basic Log Monitoring</option>
+                        <option value="5">No Monitoring</option>
+                    </select>
+                    <select class="risk-input">
+                        <option value="1">Secure Internal Network</option>
+                        <option value="3">Occasional Public WiFi</option>
+                        <option value="5">Regular Public WiFi Usage</option>
+                    </select>
                 </div>
             </div>
             <div class="card-glow"></div>
         </div>
 
-        <!-- ═══════════════════════════════════════ -->
-        <!-- CARD 2 — Access Control                 -->
-        <!-- ═══════════════════════════════════════ -->
+        <!-- Card 2: Access Control -->
         <div class="card" data-reveal data-delay="210">
             <div class="card-inner">
                 <div class="card-num">02</div>
                 <div class="card-icon-wrap">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" class="card-svg"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" class="card-svg">
+                        <rect x="3" y="11" width="18" height="11" rx="2"/>
+                        <path d="M7 11V7a5 5 0 0110 0v4"/>
+                    </svg>
                 </div>
                 <h2>Access Control</h2>
                 <div class="card-controls">
-
-                    <div class="c-select risk-input" data-value="1" tabindex="0">
-                        <div class="c-select__trigger">
-                            <span class="c-select__label">MFA Enabled</span>
-                            <span class="c-select__arrow"><svg viewBox="0 0 10 6" fill="none"><path d="M1 1l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
-                        </div>
-                        <div class="c-select__dropdown">
-                            <div class="c-select__option c-select__option--selected" data-val="1">MFA Enabled</div>
-                            <div class="c-select__option" data-val="3">Password Only</div>
-                            <div class="c-select__option" data-val="5">No Strong Authentication</div>
-                        </div>
-                    </div>
-
-                    <div class="c-select risk-input" data-value="1" tabindex="0">
-                        <div class="c-select__trigger">
-                            <span class="c-select__label">Strong Password Policy</span>
-                            <span class="c-select__arrow"><svg viewBox="0 0 10 6" fill="none"><path d="M1 1l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
-                        </div>
-                        <div class="c-select__dropdown">
-                            <div class="c-select__option c-select__option--selected" data-val="1">Strong Password Policy</div>
-                            <div class="c-select__option" data-val="3">Basic Password Policy</div>
-                            <div class="c-select__option" data-val="5">No Policy</div>
-                        </div>
-                    </div>
-
-                    <div class="c-select risk-input" data-value="1" tabindex="0">
-                        <div class="c-select__trigger">
-                            <span class="c-select__label">Role-Based Access</span>
-                            <span class="c-select__arrow"><svg viewBox="0 0 10 6" fill="none"><path d="M1 1l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
-                        </div>
-                        <div class="c-select__dropdown">
-                            <div class="c-select__option c-select__option--selected" data-val="1">Role-Based Access</div>
-                            <div class="c-select__option" data-val="3">Limited Role Management</div>
-                            <div class="c-select__option" data-val="5">No Access Segmentation</div>
-                        </div>
-                    </div>
-
+                    <select class="risk-input">
+                        <option value="1">MFA Enabled</option>
+                        <option value="3">Password Only</option>
+                        <option value="5">No Strong Authentication</option>
+                    </select>
+                    <select class="risk-input">
+                        <option value="1">Strong Password Policy</option>
+                        <option value="3">Basic Password Policy</option>
+                        <option value="5">No Policy</option>
+                    </select>
+                    <select class="risk-input">
+                        <option value="1">Role-Based Access</option>
+                        <option value="3">Limited Role Management</option>
+                        <option value="5">No Access Segmentation</option>
+                    </select>
                 </div>
             </div>
             <div class="card-glow"></div>
         </div>
 
-        <!-- ═══════════════════════════════════════ -->
-        <!-- CARD 3 — Data Protection                -->
-        <!-- ═══════════════════════════════════════ -->
+        <!-- Card 3: Data Protection -->
         <div class="card" data-reveal data-delay="260">
             <div class="card-inner">
                 <div class="card-num">03</div>
                 <div class="card-icon-wrap">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" class="card-svg"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" class="card-svg">
+                        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+                    </svg>
                 </div>
                 <h2>Data Protection</h2>
                 <div class="card-controls">
-
-                    <div class="c-select risk-input" data-value="1" tabindex="0">
-                        <div class="c-select__trigger">
-                            <span class="c-select__label">Data Encrypted</span>
-                            <span class="c-select__arrow"><svg viewBox="0 0 10 6" fill="none"><path d="M1 1l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
-                        </div>
-                        <div class="c-select__dropdown">
-                            <div class="c-select__option c-select__option--selected" data-val="1">Data Encrypted</div>
-                            <div class="c-select__option" data-val="3">Partial Encryption</div>
-                            <div class="c-select__option" data-val="5">No Encryption</div>
-                        </div>
-                    </div>
-
-                    <div class="c-select risk-input" data-value="1" tabindex="0">
-                        <div class="c-select__trigger">
-                            <span class="c-select__label">Secure Data Sharing</span>
-                            <span class="c-select__arrow"><svg viewBox="0 0 10 6" fill="none"><path d="M1 1l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
-                        </div>
-                        <div class="c-select__dropdown">
-                            <div class="c-select__option c-select__option--selected" data-val="1">Secure Data Sharing</div>
-                            <div class="c-select__option" data-val="3">Basic Controls</div>
-                            <div class="c-select__option" data-val="5">No Controls</div>
-                        </div>
-                    </div>
-
-                    <div class="c-select risk-input" data-value="1" tabindex="0">
-                        <div class="c-select__trigger">
-                            <span class="c-select__label">Secure Storage</span>
-                            <span class="c-select__arrow"><svg viewBox="0 0 10 6" fill="none"><path d="M1 1l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
-                        </div>
-                        <div class="c-select__dropdown">
-                            <div class="c-select__option c-select__option--selected" data-val="1">Secure Storage</div>
-                            <div class="c-select__option" data-val="3">Moderate Storage Security</div>
-                            <div class="c-select__option" data-val="5">No Data Protection Measures</div>
-                        </div>
-                    </div>
-
+                    <select class="risk-input">
+                        <option value="1">Data Encrypted</option>
+                        <option value="3">Partial Encryption</option>
+                        <option value="5">No Encryption</option>
+                    </select>
+                    <select class="risk-input">
+                        <option value="1">Secure Data Sharing</option>
+                        <option value="3">Basic Controls</option>
+                        <option value="5">No Controls</option>
+                    </select>
+                    <select class="risk-input">
+                        <option value="1">Secure Storage</option>
+                        <option value="3">Moderate Storage Security</option>
+                        <option value="5">No Data Protection Measures</option>
+                    </select>
                 </div>
             </div>
             <div class="card-glow"></div>
         </div>
 
-        <!-- ═══════════════════════════════════════ -->
-        <!-- CARD 4 — Backup & Recovery              -->
-        <!-- ═══════════════════════════════════════ -->
+        <!-- Card 4: Backup & Recovery -->
         <div class="card" data-reveal data-delay="310">
             <div class="card-inner">
                 <div class="card-num">04</div>
                 <div class="card-icon-wrap">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" class="card-svg"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" class="card-svg">
+                        <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/>
+                        <polyline points="17 8 12 3 7 8"/>
+                        <line x1="12" y1="3" x2="12" y2="15"/>
+                    </svg>
                 </div>
                 <h2>Backup &amp; Recovery</h2>
                 <div class="card-controls">
-
-                    <div class="c-select risk-input" data-value="1" tabindex="0">
-                        <div class="c-select__trigger">
-                            <span class="c-select__label">Daily Automated Backup</span>
-                            <span class="c-select__arrow"><svg viewBox="0 0 10 6" fill="none"><path d="M1 1l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
-                        </div>
-                        <div class="c-select__dropdown">
-                            <div class="c-select__option c-select__option--selected" data-val="1">Daily Automated Backup</div>
-                            <div class="c-select__option" data-val="3">Weekly Backup</div>
-                            <div class="c-select__option" data-val="5">No Backup</div>
-                        </div>
-                    </div>
-
-                    <div class="c-select risk-input" data-value="1" tabindex="0">
-                        <div class="c-select__trigger">
-                            <span class="c-select__label">Offsite Backup</span>
-                            <span class="c-select__arrow"><svg viewBox="0 0 10 6" fill="none"><path d="M1 1l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
-                        </div>
-                        <div class="c-select__dropdown">
-                            <div class="c-select__option c-select__option--selected" data-val="1">Offsite Backup</div>
-                            <div class="c-select__option" data-val="3">Onsite Only</div>
-                            <div class="c-select__option" data-val="5">No Redundancy</div>
-                        </div>
-                    </div>
-
-                    <div class="c-select risk-input" data-value="1" tabindex="0">
-                        <div class="c-select__trigger">
-                            <span class="c-select__label">Disaster Recovery Plan Exists</span>
-                            <span class="c-select__arrow"><svg viewBox="0 0 10 6" fill="none"><path d="M1 1l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
-                        </div>
-                        <div class="c-select__dropdown">
-                            <div class="c-select__option c-select__option--selected" data-val="1">Disaster Recovery Plan Exists</div>
-                            <div class="c-select__option" data-val="3">Partial DR Plan</div>
-                            <div class="c-select__option" data-val="5">No DR Plan</div>
-                        </div>
-                    </div>
-
+                    <select class="risk-input">
+                        <option value="1">Daily Automated Backup</option>
+                        <option value="3">Weekly Backup</option>
+                        <option value="5">No Backup</option>
+                    </select>
+                    <select class="risk-input">
+                        <option value="1">Offsite Backup</option>
+                        <option value="3">Onsite Only</option>
+                        <option value="5">No Redundancy</option>
+                    </select>
+                    <select class="risk-input">
+                        <option value="1">Disaster Recovery Plan Exists</option>
+                        <option value="3">Partial DR Plan</option>
+                        <option value="5">No DR Plan</option>
+                    </select>
                 </div>
             </div>
             <div class="card-glow"></div>
         </div>
 
-        <!-- ═══════════════════════════════════════ -->
-        <!-- CARD 5 — Employee Awareness             -->
-        <!-- ═══════════════════════════════════════ -->
+        <!-- Card 5: Employee Awareness -->
         <div class="card" data-reveal data-delay="360">
             <div class="card-inner">
                 <div class="card-num">05</div>
                 <div class="card-icon-wrap">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" class="card-svg"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/></svg>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" class="card-svg">
+                        <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/>
+                        <circle cx="9" cy="7" r="4"/>
+                        <path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/>
+                    </svg>
                 </div>
                 <h2>Employee Awareness</h2>
                 <div class="card-controls">
-
-                    <div class="c-select risk-input" data-value="1" tabindex="0">
-                        <div class="c-select__trigger">
-                            <span class="c-select__label">Regular Phishing Training</span>
-                            <span class="c-select__arrow"><svg viewBox="0 0 10 6" fill="none"><path d="M1 1l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
-                        </div>
-                        <div class="c-select__dropdown">
-                            <div class="c-select__option c-select__option--selected" data-val="1">Regular Phishing Training</div>
-                            <div class="c-select__option" data-val="3">Occasional Training</div>
-                            <div class="c-select__option" data-val="5">No Training</div>
-                        </div>
-                    </div>
-
-                    <div class="c-select risk-input" data-value="1" tabindex="0">
-                        <div class="c-select__trigger">
-                            <span class="c-select__label">Security Awareness Program</span>
-                            <span class="c-select__arrow"><svg viewBox="0 0 10 6" fill="none"><path d="M1 1l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
-                        </div>
-                        <div class="c-select__dropdown">
-                            <div class="c-select__option c-select__option--selected" data-val="1">Security Awareness Program</div>
-                            <div class="c-select__option" data-val="3">Basic Awareness</div>
-                            <div class="c-select__option" data-val="5">No Awareness Program</div>
-                        </div>
-                    </div>
-
-                    <div class="c-select risk-input" data-value="1" tabindex="0">
-                        <div class="c-select__trigger">
-                            <span class="c-select__label">Incident Reporting Policy</span>
-                            <span class="c-select__arrow"><svg viewBox="0 0 10 6" fill="none"><path d="M1 1l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
-                        </div>
-                        <div class="c-select__dropdown">
-                            <div class="c-select__option c-select__option--selected" data-val="1">Incident Reporting Policy</div>
-                            <div class="c-select__option" data-val="3">Informal Reporting</div>
-                            <div class="c-select__option" data-val="5">No Reporting Mechanism</div>
-                        </div>
-                    </div>
-
+                    <select class="risk-input">
+                        <option value="1">Regular Phishing Training</option>
+                        <option value="3">Occasional Training</option>
+                        <option value="5">No Training</option>
+                    </select>
+                    <select class="risk-input">
+                        <option value="1">Security Awareness Program</option>
+                        <option value="3">Basic Awareness</option>
+                        <option value="5">No Awareness Program</option>
+                    </select>
+                    <select class="risk-input">
+                        <option value="1">Incident Reporting Policy</option>
+                        <option value="3">Informal Reporting</option>
+                        <option value="5">No Reporting Mechanism</option>
+                    </select>
                 </div>
             </div>
             <div class="card-glow"></div>
@@ -325,18 +232,23 @@
 
     </div><!-- /card-grid -->
 
+    <!-- ═══════════════════════════════════ -->
+    <!-- EVALUATE BUTTON                     -->
+    <!-- ═══════════════════════════════════ -->
     <div class="evaluate-section" data-reveal data-delay="400">
         <button type="button" id="evaluateBtn" class="eval-btn">
             <span class="btn-label">Run Risk Evaluation</span>
             <span class="btn-arrow">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                    <path d="M5 12h14M12 5l7 7-7 7"/>
+                </svg>
             </span>
         </button>
     </div>
 
-    <!-- ═══════════════════════════════════════════ -->
-    <!-- RESULTS                                     -->
-    <!-- ═══════════════════════════════════════════ -->
+    <!-- ═══════════════════════════════════ -->
+    <!-- RESULTS SECTION                     -->
+    <!-- ═══════════════════════════════════ -->
     <div class="results-section" id="resultsSection" style="display:none;">
 
         <div id="companySummary"></div>
@@ -390,7 +302,11 @@
                     <div class="pdf-cta-sub">A full A4 PDF with gauge, charts, domain breakdown &amp; remediation roadmap</div>
                 </div>
                 <button type="submit" class="pdf-btn">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/>
+                        <polyline points="7 10 12 15 17 10"/>
+                        <line x1="12" y1="15" x2="12" y2="3"/>
+                    </svg>
                     Download PDF Report
                 </button>
             </div>

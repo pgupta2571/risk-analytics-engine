@@ -6,90 +6,108 @@ let chartInstance = null;
 let gaugeInstance  = null;
 
 // ============================================================
+//  RENDER-SAFE: add .js-ready immediately so CSS reveal
+//  animation activates only once JS is confirmed running.
+//  This prevents blank screens on cold-start servers.
+// ============================================================
+document.addEventListener("DOMContentLoaded", () => {
+    document.body.classList.add("js-ready");
+});
+if (document.readyState !== "loading") {
+    document.body.classList.add("js-ready");
+}
+
+
+// ============================================================
 //  PARTICLE BACKGROUND
 // ============================================================
 (function initParticles() {
-    const canvas = document.getElementById("bgCanvas");
-    if (!canvas) return;
-    const ctx = canvas.getContext("2d");
-    let W, H;
+    try {
+        const canvas = document.getElementById("bgCanvas");
+        if (!canvas) return;
+        const ctx = canvas.getContext("2d");
+        let W, H;
 
-    function resize() {
-        W = canvas.width  = window.innerWidth;
-        H = canvas.height = window.innerHeight;
-    }
-
-    class Particle {
-        constructor() { this.reset(true); }
-        reset(rand) {
-            this.x  = rand ? Math.random() * W : Math.random() * W;
-            this.y  = rand ? Math.random() * H : -10;
-            this.vx = (Math.random() - 0.5) * 0.3;
-            this.vy = Math.random() * 0.25 + 0.05;
-            this.r  = Math.random() * 1.4 + 0.3;
-            this.a  = Math.random() * 0.5 + 0.1;
+        function resize() {
+            W = canvas.width  = window.innerWidth;
+            H = canvas.height = window.innerHeight;
         }
-        update() {
-            this.x += this.vx;
-            this.y += this.vy;
-            if (this.y > H + 10) this.reset(false);
-        }
-        draw() {
-            ctx.beginPath();
-            ctx.arc(this.x, this.y, this.r, 0, Math.PI * 2);
-            ctx.fillStyle = `rgba(0,210,255,${this.a})`;
-            ctx.fill();
-        }
-    }
 
-    let particles;
-    function init() {
-        resize();
-        particles = Array.from({ length: 90 }, () => new Particle());
-    }
+        class Particle {
+            constructor() { this.reset(true); }
+            reset(rand) {
+                this.x  = rand ? Math.random() * W : Math.random() * W;
+                this.y  = rand ? Math.random() * H : -10;
+                this.vx = (Math.random() - 0.5) * 0.3;
+                this.vy = Math.random() * 0.25 + 0.05;
+                this.r  = Math.random() * 1.4 + 0.3;
+                this.a  = Math.random() * 0.5 + 0.1;
+            }
+            update() {
+                this.x += this.vx;
+                this.y += this.vy;
+                if (this.y > H + 10) this.reset(false);
+            }
+            draw() {
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.r, 0, Math.PI * 2);
+                ctx.fillStyle = `rgba(0,210,255,${this.a})`;
+                ctx.fill();
+            }
+        }
 
-    function drawConnections() {
-        for (let i = 0; i < particles.length; i++) {
-            for (let j = i + 1; j < particles.length; j++) {
-                const dx = particles[i].x - particles[j].x;
-                const dy = particles[i].y - particles[j].y;
-                const dist = Math.sqrt(dx * dx + dy * dy);
-                if (dist < 120) {
-                    const alpha = (1 - dist / 120) * 0.12;
-                    ctx.beginPath();
-                    ctx.moveTo(particles[i].x, particles[i].y);
-                    ctx.lineTo(particles[j].x, particles[j].y);
-                    ctx.strokeStyle = `rgba(0,210,255,${alpha})`;
-                    ctx.lineWidth = 0.5;
-                    ctx.stroke();
+        let particles;
+        function init() {
+            resize();
+            particles = Array.from({ length: 90 }, () => new Particle());
+        }
+
+        function drawConnections() {
+            for (let i = 0; i < particles.length; i++) {
+                for (let j = i + 1; j < particles.length; j++) {
+                    const dx   = particles[i].x - particles[j].x;
+                    const dy   = particles[i].y - particles[j].y;
+                    const dist = Math.sqrt(dx * dx + dy * dy);
+                    if (dist < 120) {
+                        const alpha = (1 - dist / 120) * 0.12;
+                        ctx.beginPath();
+                        ctx.moveTo(particles[i].x, particles[i].y);
+                        ctx.lineTo(particles[j].x, particles[j].y);
+                        ctx.strokeStyle = `rgba(0,210,255,${alpha})`;
+                        ctx.lineWidth = 0.5;
+                        ctx.stroke();
+                    }
                 }
             }
         }
-    }
 
-    function drawGrid() {
-        const step = 80;
-        ctx.strokeStyle = "rgba(0,210,255,0.025)";
-        ctx.lineWidth = 0.5;
-        for (let x = 0; x < W; x += step) {
-            ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, H); ctx.stroke();
+        function drawGrid() {
+            const step = 80;
+            ctx.strokeStyle = "rgba(0,210,255,0.025)";
+            ctx.lineWidth = 0.5;
+            for (let x = 0; x < W; x += step) {
+                ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, H); ctx.stroke();
+            }
+            for (let y = 0; y < H; y += step) {
+                ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke();
+            }
         }
-        for (let y = 0; y < H; y += step) {
-            ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke();
+
+        function loop() {
+            ctx.clearRect(0, 0, W, H);
+            drawGrid();
+            drawConnections();
+            particles.forEach(p => { p.update(); p.draw(); });
+            requestAnimationFrame(loop);
         }
-    }
 
-    function loop() {
-        ctx.clearRect(0, 0, W, H);
-        drawGrid();
-        drawConnections();
-        particles.forEach(p => { p.update(); p.draw(); });
-        requestAnimationFrame(loop);
+        window.addEventListener("resize", resize);
+        init();
+        loop();
+    } catch (e) {
+        // Particle background is decorative — swallow any errors silently
+        console.warn("Particle background skipped:", e.message);
     }
-
-    window.addEventListener("resize", resize);
-    init();
-    loop();
 })();
 
 
@@ -97,152 +115,35 @@ let gaugeInstance  = null;
 //  SCROLL REVEAL
 // ============================================================
 (function initReveal() {
-    const els = document.querySelectorAll("[data-reveal]");
-    const io  = new IntersectionObserver((entries) => {
+    function revealEl(el) {
+        const delay = parseInt(el.dataset.delay || 0);
+        setTimeout(() => el.classList.add("revealed"), delay);
+    }
+
+    // Fallback: if IntersectionObserver is not supported
+    if (!("IntersectionObserver" in window)) {
+        document.querySelectorAll("[data-reveal]").forEach(revealEl);
+        return;
+    }
+
+    const io = new IntersectionObserver((entries) => {
         entries.forEach(e => {
             if (e.isIntersecting) {
-                const delay = parseInt(e.target.dataset.delay || 0);
-                setTimeout(() => e.target.classList.add("revealed"), delay);
+                revealEl(e.target);
                 io.unobserve(e.target);
             }
         });
-    }, { threshold: 0.1 });
-    els.forEach(el => io.observe(el));
-})();
+    }, { threshold: 0.05 });
 
+    document.querySelectorAll("[data-reveal]").forEach(el => io.observe(el));
 
-// ============================================================
-//  CUSTOM DROPDOWN ENGINE
-// ============================================================
-(function initDropdowns() {
-
-    // Close every open dropdown except optionally one to keep open
-    function closeAll(except) {
-        document.querySelectorAll(".c-select--open").forEach(el => {
-            if (el !== except) {
-                el.classList.remove("c-select--open");
-                el.setAttribute("aria-expanded", "false");
-            }
+    // Safety net: force-reveal anything still hidden after 1.5s
+    // (handles Render cold-start where IntersectionObserver may be slow)
+    setTimeout(() => {
+        document.querySelectorAll("[data-reveal]:not(.revealed)").forEach(el => {
+            el.classList.add("revealed");
         });
-    }
-
-    // Open a specific dropdown
-    function openDropdown(el) {
-        closeAll(el);
-        el.classList.add("c-select--open");
-        el.setAttribute("aria-expanded", "true");
-    }
-
-    // Close a specific dropdown
-    function closeDropdown(el) {
-        el.classList.remove("c-select--open");
-        el.setAttribute("aria-expanded", "false");
-    }
-
-    // Apply a selection to a dropdown
-    function selectOption(dropdown, optionEl) {
-        const val   = optionEl.dataset.val;
-        const label = optionEl.textContent.trim();
-
-        // Update data-value on root (this is what the calculator reads)
-        dropdown.dataset.value = val;
-
-        // Update displayed label
-        const labelEl = dropdown.querySelector(".c-select__label");
-        if (labelEl) labelEl.textContent = label;
-
-        // Update selected class on all options
-        dropdown.querySelectorAll(".c-select__option").forEach(o => {
-            o.classList.toggle("c-select__option--selected", o === optionEl);
-        });
-
-        // Close after selection
-        closeDropdown(dropdown);
-
-        // Dispatch a change event so external listeners (if any) can react
-        dropdown.dispatchEvent(new CustomEvent("change", { bubbles: true, detail: { value: val, label } }));
-    }
-
-    // ── Wire up every .c-select ──────────────────────────────
-    document.querySelectorAll(".c-select").forEach(dropdown => {
-
-        const trigger  = dropdown.querySelector(".c-select__trigger");
-        const options  = dropdown.querySelectorAll(".c-select__option");
-
-        // ARIA
-        dropdown.setAttribute("role", "combobox");
-        dropdown.setAttribute("aria-expanded", "false");
-        dropdown.setAttribute("aria-haspopup", "listbox");
-
-        const ddPanel = dropdown.querySelector(".c-select__dropdown");
-        if (ddPanel) ddPanel.setAttribute("role", "listbox");
-        options.forEach(o => o.setAttribute("role", "option"));
-
-        // Click on trigger → toggle
-        trigger.addEventListener("click", (e) => {
-            e.stopPropagation();
-            const isOpen = dropdown.classList.contains("c-select--open");
-            isOpen ? closeDropdown(dropdown) : openDropdown(dropdown);
-        });
-
-        // Click on option → select
-        options.forEach(optionEl => {
-            optionEl.addEventListener("click", (e) => {
-                e.stopPropagation();
-                selectOption(dropdown, optionEl);
-            });
-        });
-
-        // Keyboard navigation
-        dropdown.addEventListener("keydown", (e) => {
-            const isOpen = dropdown.classList.contains("c-select--open");
-            const opts   = [...dropdown.querySelectorAll(".c-select__option")];
-            const current = dropdown.querySelector(".c-select__option--selected");
-            const idx     = opts.indexOf(current);
-
-            switch (e.key) {
-                case "Enter":
-                case " ":
-                    e.preventDefault();
-                    isOpen
-                        ? (current && selectOption(dropdown, current))
-                        : openDropdown(dropdown);
-                    break;
-                case "Escape":
-                    closeDropdown(dropdown);
-                    dropdown.focus();
-                    break;
-                case "ArrowDown":
-                    e.preventDefault();
-                    if (!isOpen) { openDropdown(dropdown); break; }
-                    if (idx < opts.length - 1) {
-                        opts[idx + 1].classList.add("c-select__option--selected");
-                        current?.classList.remove("c-select__option--selected");
-                    }
-                    break;
-                case "ArrowUp":
-                    e.preventDefault();
-                    if (!isOpen) { openDropdown(dropdown); break; }
-                    if (idx > 0) {
-                        opts[idx - 1].classList.add("c-select__option--selected");
-                        current?.classList.remove("c-select__option--selected");
-                    }
-                    break;
-                case "Tab":
-                    closeDropdown(dropdown);
-                    break;
-            }
-        });
-    });
-
-    // ── Global click → close all ─────────────────────────────
-    document.addEventListener("click", () => closeAll());
-
-    // ── Global Escape ────────────────────────────────────────
-    document.addEventListener("keydown", (e) => {
-        if (e.key === "Escape") closeAll();
-    });
-
+    }, 1500);
 })();
 
 
@@ -250,7 +151,7 @@ let gaugeInstance  = null;
 //  DOMAIN META
 // ============================================================
 const DOMAIN_META = {
-    network:  {
+    network: {
         label:  "Network Security",
         weight: 0.30,
         compliance: ["ISO 27001 – A.13", "NIST CSF – PR.AC", "CIS Control 12"],
@@ -260,7 +161,7 @@ const DOMAIN_META = {
             low:  "Continue 24/7 monitoring. Consider periodic red-team exercises to validate network defences."
         }
     },
-    access:   {
+    access: {
         label:  "Access Control",
         weight: 0.20,
         compliance: ["ISO 27001 – A.9", "NIST CSF – PR.AC", "CIS Control 5 & 6"],
@@ -270,7 +171,7 @@ const DOMAIN_META = {
             low:  "Maintain regular access reviews. Consider adopting a Zero Trust architecture."
         }
     },
-    data:     {
+    data: {
         label:  "Data Protection",
         weight: 0.25,
         compliance: ["ISO 27001 – A.8", "GDPR Article 32", "CIS Control 3 & 13"],
@@ -280,7 +181,7 @@ const DOMAIN_META = {
             low:  "Conduct annual data classification reviews. Ensure encryption keys are rotated and stored in a dedicated key management service."
         }
     },
-    backup:   {
+    backup: {
         label:  "Backup & Recovery",
         weight: 0.15,
         compliance: ["ISO 27001 – A.12.3", "NIST CSF – RC.RP", "CIS Control 10"],
@@ -304,15 +205,19 @@ const DOMAIN_META = {
 
 
 // ============================================================
-//  RISK HELPERS
+//  RISK CLASSIFICATION
 // ============================================================
 function classifyRisk(score) {
     if (score < 30)  return { level: "Low",      badge: "badge-low",      maturity: "Optimised",  color: "#00ffc8" };
     if (score < 55)  return { level: "Moderate", badge: "badge-moderate", maturity: "Managed",    color: "#00d2ff" };
     if (score < 75)  return { level: "High",     badge: "badge-high",     maturity: "Developing", color: "#ff9f43" };
-    return               { level: "Critical",    badge: "badge-critical", maturity: "Initial",    color: "#ff4757" };
+    return                  { level: "Critical",  badge: "badge-critical", maturity: "Initial",    color: "#ff4757" };
 }
 
+
+// ============================================================
+//  RESULT SECTION BUILDERS
+// ============================================================
 function buildSummary(score, cl, name) {
     const n = name || "The assessed organisation";
     return `${n} has recorded an overall cybersecurity risk score of ${score}%, classified as <strong>${cl.level}</strong> with a maturity level of <strong>${cl.maturity}</strong>. This assessment spans five critical control domains. Immediate leadership attention is recommended for any domain scoring above 60%.`;
@@ -393,7 +298,7 @@ function createChart(p) {
                 label:           "Risk %",
                 data:            vals,
                 backgroundColor: bgs,
-                borderColor:     bgs.map(c => c.replace("0.75","1").replace("0.65","1")),
+                borderColor:     bgs.map(c => c.replace("0.75", "1").replace("0.65", "1")),
                 borderWidth:     1,
                 borderRadius:    10,
                 borderSkipped:   false
@@ -478,16 +383,16 @@ document.addEventListener("DOMContentLoaded", () => {
 
     btn.addEventListener("click", function () {
 
-        // ── 1. Read values from custom dropdowns ───────────────
-        // .risk-input is now a .c-select div; value is in data-value attribute
+        // ── 1. Collect values from native <select> elements ────
+        // inp.value is the standard HTMLSelectElement property —
+        // always returns the value attribute of the selected option.
         const inputs = document.querySelectorAll(".risk-input");
         if (!inputs.length) { alert("No inputs found."); return; }
 
         let raw = { network: 0, access: 0, data: 0, backup: 0, employee: 0 };
 
         inputs.forEach((inp, i) => {
-            // Support both legacy <select> and new .c-select divs
-            const v = parseInt(inp.dataset?.value ?? inp.value) || 0;
+            const v = parseInt(inp.value) || 0;   // standard .value, no dataset dependency
             if      (i < 3)  raw.network  += v;
             else if (i < 6)  raw.access   += v;
             else if (i < 9)  raw.data     += v;
@@ -495,7 +400,7 @@ document.addEventListener("DOMContentLoaded", () => {
             else             raw.employee += v;
         });
 
-        // ── 2. Percentages ─────────────────────────────────────
+        // ── 2. Calculate percentages ───────────────────────────
         const domMax = 15;
         const p = {
             network:  (raw.network  / domMax) * 100,
@@ -510,22 +415,21 @@ document.addEventListener("DOMContentLoaded", () => {
         const score    = parseFloat(weighted.toFixed(2));
         const cl       = classifyRisk(score);
 
-        // ── 4. Profile fields ──────────────────────────────────
+        // ── 4. Read profile fields ─────────────────────────────
         const companyName    = document.getElementById("companyName")?.value.trim()    || "";
         const industryType   = document.getElementById("industryType")?.value.trim()   || "Not Specified";
         const employeeCount  = document.getElementById("employeeCount")?.value.trim()  || "N/A";
         const endpointCount  = document.getElementById("endpointCount")?.value.trim()  || "N/A";
-        const assessmentDate = document.getElementById("assessmentDate")?.value        || new Date().toISOString().slice(0,10);
+        const assessmentDate = document.getElementById("assessmentDate")?.value        || new Date().toISOString().slice(0, 10);
 
-        // ── 5. Show results ────────────────────────────────────
+        // ── 5. Show results section ────────────────────────────
         const resultsEl = document.getElementById("resultsSection");
         resultsEl.style.display = "block";
 
         // ── 6. Company banner ──────────────────────────────────
         const sumEl = document.getElementById("companySummary");
         if (sumEl) {
-            sumEl.innerHTML = `
-            <div class="company-summary-banner">
+            sumEl.innerHTML = `<div class="company-summary-banner">
                 <span><strong>Organisation:</strong> ${companyName || "—"}</span>
                 <span><strong>Industry:</strong> ${industryType}</span>
                 <span><strong>Employees:</strong> ${employeeCount}</span>
@@ -534,15 +438,19 @@ document.addEventListener("DOMContentLoaded", () => {
             </div>`;
         }
 
-        // ── 7. Score & badge ───────────────────────────────────
+        // ── 7. Score display ───────────────────────────────────
         const scoreEl = document.getElementById("riskScore");
         if (scoreEl) {
-            scoreEl.innerText      = score.toFixed(1) + "%";
-            scoreEl.style.color    = cl.color;
+            scoreEl.innerText        = score.toFixed(1) + "%";
+            scoreEl.style.color      = cl.color;
             scoreEl.style.textShadow = `0 0 40px ${cl.color}60, 0 0 80px ${cl.color}30`;
         }
+
         const badgeEl = document.getElementById("riskBadge");
-        if (badgeEl) { badgeEl.className = `risk-badge ${cl.badge}`; badgeEl.innerText = cl.level; }
+        if (badgeEl) {
+            badgeEl.className = `risk-badge ${cl.badge}`;
+            badgeEl.innerText = cl.level;
+        }
 
         const matEl = document.getElementById("maturity");
         if (matEl) matEl.innerText = "Maturity Level: " + cl.maturity;
@@ -562,11 +470,10 @@ document.addEventListener("DOMContentLoaded", () => {
         const complianceEl = document.getElementById("complianceMapping");
         if (complianceEl) complianceEl.innerHTML = buildComplianceMapping(p);
 
-        const recsEl   = document.getElementById("recommendations");
-        const recsHTML = buildRecommendations(p);
-        if (recsEl) recsEl.innerHTML = recsHTML;
+        const recsEl = document.getElementById("recommendations");
+        if (recsEl) recsEl.innerHTML = buildRecommendations(p);
 
-        // ── 10. Populate PDF hidden fields ─────────────────────
+        // ── 10. Populate PDF form hidden fields ────────────────
         const recsPlain = Object.entries(p).map(([k, v]) => {
             const tier = v >= 70 ? "high" : v >= 40 ? "mid" : "low";
             return `${DOMAIN_META[k].label}: ${DOMAIN_META[k].adviceBank[tier]}`;
@@ -588,7 +495,7 @@ document.addEventListener("DOMContentLoaded", () => {
         document.getElementById("formDomains").value         = JSON.stringify(domainsJSON);
         document.getElementById("formRecommendations").value = JSON.stringify(recsPlain);
 
-        // ── 11. Charts + scroll ────────────────────────────────
+        // ── 11. Render charts + scroll ─────────────────────────
         setTimeout(() => {
             createChart(p);
             createGauge(score, cl.color);
