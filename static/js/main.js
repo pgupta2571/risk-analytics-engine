@@ -300,8 +300,8 @@ function createChart(p) {
                 backgroundColor: bgs,
                 borderColor:     bgs.map(c => c.replace("0.75", "1").replace("0.65", "1")),
                 borderWidth:     1,
-                borderRadius:    10,
-                borderSkipped:   false
+                borderRadius:    10
+                // FIX 2: removed borderSkipped: false — causes Chart.js 4.x bars to not render
             }]
         },
         options: {
@@ -384,15 +384,13 @@ document.addEventListener("DOMContentLoaded", () => {
     btn.addEventListener("click", function () {
 
         // ── 1. Collect values from native <select> elements ────
-        // inp.value is the standard HTMLSelectElement property —
-        // always returns the value attribute of the selected option.
         const inputs = document.querySelectorAll(".risk-input");
         if (!inputs.length) { alert("No inputs found."); return; }
 
         let raw = { network: 0, access: 0, data: 0, backup: 0, employee: 0 };
 
         inputs.forEach((inp, i) => {
-            const v = parseInt(inp.value) || 0;   // standard .value, no dataset dependency
+            const v = parseInt(inp.value) || 0;
             if      (i < 3)  raw.network  += v;
             else if (i < 6)  raw.access   += v;
             else if (i < 9)  raw.data     += v;

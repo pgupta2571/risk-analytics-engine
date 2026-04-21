@@ -271,7 +271,8 @@
         <div class="chart-panel glass-panel">
             <div class="section-tag" style="margin-bottom:20px;">DOMAIN EXPOSURE — BAR ANALYSIS</div>
             <div class="chart-canvas-wrap">
-                <canvas id="riskChart"></canvas>
+                <!-- FIX 1: explicit height="300" so Chart.js resolves container size correctly -->
+                <canvas id="riskChart" height="300"></canvas>
             </div>
         </div>
 
